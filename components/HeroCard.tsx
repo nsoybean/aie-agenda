@@ -1,4 +1,5 @@
 import QRCode from "react-qr-code";
+import { XIcon, LinkedInIcon } from "./BrandIcons";
 import { aggregateTopics, countByDay, EVENT_DAYS, formatTime } from "@/lib/api";
 import { hueFor } from "@/lib/theme";
 import { EVENT_NAME } from "@/lib/site";
@@ -218,11 +219,24 @@ export default function HeroCard({
           className="mt-[1.4cqw] flex items-center justify-between font-mono text-[0.9cqw]"
           style={{ color: tx(0.45) }}
         >
-          <span>
-            {xHandle || linkedin
-              ? [xHandle && `@${xHandle}`, linkedin && `li/${linkedin}`].filter(Boolean).join(" · ")
-              : "plan yours · aie-agenda"}
-          </span>
+          {/* left: social handles with brand icons, or fallback */}
+          <div className="flex items-center gap-[1.2cqw]">
+            {xHandle ? (
+              <span className="flex items-center gap-[0.4cqw]" style={{ color: tx(0.70) }}>
+                <XIcon style={{ width: "1.1cqw", height: "1.1cqw", display: "inline-block", flexShrink: 0 }} />
+                @{xHandle}
+              </span>
+            ) : null}
+            {linkedin ? (
+              <span className="flex items-center gap-[0.4cqw]" style={{ color: tx(0.70) }}>
+                <LinkedInIcon style={{ width: "1.1cqw", height: "1.1cqw", display: "inline-block", flexShrink: 0 }} />
+                {linkedin}
+              </span>
+            ) : null}
+            {!xHandle && !linkedin && (
+              <span>plan yours · aie-agenda</span>
+            )}
+          </div>
           <span style={{ color: tx(0.65) }}>{footer}</span>
         </div>
       </div>
