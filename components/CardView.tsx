@@ -3,7 +3,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { conflictIdSet } from "@/lib/api";
-import { encodeAgenda } from "@/lib/state";
 import type { ThemeId } from "@/lib/themes";
 import { DEFAULT_THEME } from "@/lib/themes";
 import type { Session } from "@/lib/types";
@@ -44,8 +43,10 @@ export default function CardView({
 
   function handleThemeChange(t: ThemeId) {
     setTheme(t);
-    const q = encodeAgenda({ name, ids, theme: t, ...(xHandle && { x: xHandle }), ...(linkedin && { linkedin }) });
-    router.replace(`/card?${q}`, { scroll: false });
+    const url = new URL(window.location.href);
+    if (t === DEFAULT_THEME) url.searchParams.delete("t");
+    else url.searchParams.set("t", t);
+    router.replace(url.pathname + url.search, { scroll: false });
   }
 
   return (

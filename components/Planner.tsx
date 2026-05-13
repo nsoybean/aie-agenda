@@ -51,6 +51,7 @@ export default function Planner({
   const [q, setQ] = useState("");
   const [detail, setDetail] = useState<Session | null>(null);
 
+  const allIds = useMemo(() => sessions.map((s) => s.id), [sessions]);
   const byId = useMemo(() => new Map(sessions.map((s) => [s.id, s])), [sessions]);
   const idSet = useMemo(() => new Set(ids), [ids]);
   const selected = useMemo(
@@ -75,7 +76,7 @@ export default function Planner({
     }
     const t = setTimeout(() => {
       router.replace(
-        plannerPath({ name: cleanName, ids, ...(cleanX && { x: cleanX }), ...(cleanLinkedIn && { linkedin: cleanLinkedIn }) }),
+        plannerPath({ name: cleanName, ids, ...(cleanX && { x: cleanX }), ...(cleanLinkedIn && { linkedin: cleanLinkedIn }) }, allIds),
         { scroll: false },
       );
     }, 350);
@@ -116,7 +117,7 @@ export default function Planner({
   );
   const groups = groupByDay(filtered);
   const total = ids.length;
-  const cardHref = cardPath({ name: cleanName, ids, ...(cleanX && { x: cleanX }), ...(cleanLinkedIn && { linkedin: cleanLinkedIn }) });
+  const cardHref = cardPath({ name: cleanName, ids, ...(cleanX && { x: cleanX }), ...(cleanLinkedIn && { linkedin: cleanLinkedIn }) }, allIds);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 pb-28 pt-8 sm:pt-12 lg:pb-12">

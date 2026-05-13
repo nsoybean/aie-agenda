@@ -1,4 +1,3 @@
-import LZString from "lz-string";
 import type { ThemeId } from "./themes";
 import { DEFAULT_THEME, THEMES } from "./themes";
 
@@ -13,6 +12,28 @@ export interface AgendaState {
 const MAX_NAME = 40;
 const MAX_HANDLE = 15;
 const MAX_LINKEDIN = 60;
+
+const B62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+const SHORT_LEN = 5;
+
+function fnv1a32(str: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h;
+}
+
+function shortId(slug: string): string {
+  let n = fnv1a32(slug);
+  let out = "";
+  for (let i = 0; i < SHORT_LEN; i++) {
+    out = B62[n % 62] + out;
+    n = Math.floor(n / 62);
+  }
+  return out;
+}
 
 export function sanitizeName(raw: string): string {
   return raw.replace(/\s+/g, " ").trim().slice(0, MAX_NAME);
@@ -30,12 +51,14 @@ export function sanitizeLinkedIn(raw: string): string {
     .slice(0, MAX_LINKEDIN);
 }
 
-export function encodeAgenda(state: AgendaState): string {
+export function encodeAgenda(state: AgendaState, allIds: string[]): string {
   const params = new URLSearchParams();
   const name = sanitizeName(state.name);
   if (name) params.set("n", name);
-  if (state.ids.length) {
-    params.set("p", LZString.compressToEncodedURIComponent(state.ids.join(",")));
+  if (state.ids.length && allIds.length) {
+    const validIds = new Set(allIds);
+    const hashes = state.ids.filter((id) => validIds.has(id)).map(shortId);
+    if (hashes.length) params.set("p", hashes.join("."));
   }
   if (state.theme && state.theme !== DEFAULT_THEME) params.set("t", state.theme);
   if (state.x) params.set("x", state.x);
@@ -53,19 +76,15 @@ function getParam(sp: SearchParamsLike, key: string): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-export function decodeAgenda(sp: SearchParamsLike): AgendaState {
+export function decodeAgenda(sp: SearchParamsLike, allIds: string[]): AgendaState {
   const name = sanitizeName(getParam(sp, "n") ?? "");
   const p = getParam(sp, "p");
   const t = getParam(sp, "t") as ThemeId | undefined;
 
   let ids: string[] = [];
-  if (p) {
-    try {
-      const raw = LZString.decompressFromEncodedURIComponent(p) ?? "";
-      ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
-    } catch {
-      ids = [];
-    }
+  if (p && allIds.length) {
+    const hashToId = new Map(allIds.map((id) => [shortId(id), id]));
+    ids = p.split(".").map((h) => hashToId.get(h)).filter((id): id is string => id !== undefined);
   }
   const seen = new Set<string>();
   ids = ids.filter((id) => (seen.has(id) ? false : (seen.add(id), true)));
@@ -76,12 +95,12 @@ export function decodeAgenda(sp: SearchParamsLike): AgendaState {
   return { name, ids, theme, ...(x && { x }), ...(linkedin && { linkedin }) };
 }
 
-export function cardPath(state: AgendaState): string {
-  const q = encodeAgenda(state);
+export function cardPath(state: AgendaState, allIds: string[]): string {
+  const q = encodeAgenda(state, allIds);
   return q ? `/card?${q}` : "/card";
 }
 
-export function plannerPath(state: AgendaState): string {
-  const q = encodeAgenda(state);
+export function plannerPath(state: AgendaState, allIds: string[]): string {
+  const q = encodeAgenda(state, allIds);
   return q ? `/?${q}` : "/";
 }

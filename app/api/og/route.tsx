@@ -8,6 +8,7 @@ import {
   formatTime,
   getSchedule,
   resolveSessions,
+  selectableSessions,
 } from "@/lib/api";
 import { hueFor } from "@/lib/theme";
 import { decodeAgenda } from "@/lib/state";
@@ -74,11 +75,12 @@ const DAY_NUM_OG: Record<string, string> = {
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const { name, ids, theme: themeId, x, linkedin } = decodeAgenda(searchParams);
+  const schedule = await getSchedule().catch(() => null);
+  const allIds = schedule ? selectableSessions(schedule).map((s) => s.id) : [];
+  const { name, ids, theme: themeId, x, linkedin } = decodeAgenda(searchParams, allIds);
   const theme = getTheme(themeId);
   const tx = theme.textAt;
 
-  const schedule = await getSchedule().catch(() => null);
   const sessions = schedule ? resolveSessions(schedule, ids) : [];
 
   const raw = name.trim() || "My";

@@ -8,10 +8,11 @@ export const dynamic = "force-dynamic";
 
 export default async function Home({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
-  const initial = decodeAgenda(sp);
   const schedule = await getSchedule();
   const sessions = selectableSessions(schedule);
-  const validIds = new Set(sessions.map((s) => s.id));
+  const allIds = sessions.map((s) => s.id);
+  const initial = decodeAgenda(sp, allIds);
+  const validIds = new Set(allIds);
   const topTopics = aggregateTopics(sessions).slice(0, 8);
 
   return (
