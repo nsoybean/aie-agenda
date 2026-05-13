@@ -259,7 +259,13 @@ export default function Planner({
         </div>
       )}
 
-      <SessionDetailPanel session={detail} onClose={() => setDetail(null)} />
+      <SessionDetailPanel
+        session={detail}
+        allSessions={sessions}
+        onClose={() => setDetail(null)}
+        selectedIds={idSet}
+        onToggle={toggle}
+      />
     </div>
   );
 }

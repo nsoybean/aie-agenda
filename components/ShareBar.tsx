@@ -19,12 +19,10 @@ export default function ShareBar({
   name,
   sessions,
   cardNodeId,
-  editHref,
 }: {
   name: string;
   sessions: Session[];
   cardNodeId: string;
-  editHref: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState<null | "png">(null);
@@ -105,12 +103,6 @@ export default function ShareBar({
       >
         Add all to calendar (.ics)
       </button>
-      <a
-        href={editHref}
-        className="rounded-full border border-transparent px-4 py-2 text-sm text-ink-dim transition-colors hover:text-ink"
-      >
-        Edit my picks →
-      </a>
     </div>
   );
 }

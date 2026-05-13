@@ -27,6 +27,22 @@ export default function CardView({
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
+      {/* top nav */}
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <div>
+          <div className="serif text-lg font-semibold leading-tight text-ink">
+            AI Engineer Singapore
+          </div>
+          <div className="label text-[10px] text-ink-faint">15–17 May 2026 · Your agenda</div>
+        </div>
+        <a
+          href={editHref}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line px-3 py-1.5 font-mono text-xs text-ink-dim transition-colors hover:border-line-strong hover:text-ink"
+        >
+          ← Edit my picks
+        </a>
+      </div>
+
       {/* the card */}
       <div className="mx-auto max-w-2xl">
         <div id={CARD_ID} className="overflow-hidden rounded-2xl shadow-[0_20px_70px_rgba(0,0,0,0.6)]">
@@ -35,7 +51,7 @@ export default function CardView({
       </div>
 
       <div className="mt-6">
-        <ShareBar name={name} sessions={sessions} cardNodeId={CARD_ID} editHref={editHref} />
+        <ShareBar name={name} sessions={sessions} cardNodeId={CARD_ID} />
       </div>
 
       {nClashes > 0 && (
@@ -56,7 +72,7 @@ export default function CardView({
         <SessionList sessions={sessions} conflictIds={conflicts} onSelect={setOpen} selectedId={open?.id} />
       </section>
 
-      <SessionDetailPanel session={open} onClose={() => setOpen(null)} />
+      <SessionDetailPanel session={open} allSessions={sessions} onClose={() => setOpen(null)} />
     </main>
   );
 }
