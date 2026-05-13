@@ -3,10 +3,10 @@ import { pillColors } from "@/lib/theme";
 import { EVENT_NAME } from "@/lib/site";
 import type { Session } from "@/lib/types";
 
-const DAY_NUM: Record<string, string> = {
-  "2026-05-15": "DAY 1 · FRI",
-  "2026-05-16": "DAY 2 · SAT",
-  "2026-05-17": "DAY 3 · SUN",
+const DAY_LABEL: Record<string, { label: string; date: string }> = {
+  "2026-05-15": { label: "DAY 1 · FRI", date: "15 May" },
+  "2026-05-16": { label: "DAY 2 · SAT", date: "16 May" },
+  "2026-05-17": { label: "DAY 3 · SUN", date: "17 May" },
 };
 
 export default function HeroCard({
@@ -26,7 +26,14 @@ export default function HeroCard({
   const byDay = countByDay(sessions);
   const total = sessions.length;
   const days = EVENT_DAYS.filter((d) => (byDay[d] ?? 0) > 0).length || EVENT_DAYS.length;
-  const highlights = pickHighlights(sessions, 3);
+
+  // sessions sorted by time, grouped per day
+  const byDaySessions = Object.fromEntries(
+    EVENT_DAYS.map((d) => [
+      d,
+      sessions.filter((s) => s.day === d).sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+    ]),
+  );
 
   return (
     <div
@@ -50,50 +57,48 @@ export default function HeroCard({
         <div className="grain-overlay absolute inset-0 mix-blend-soft-light opacity-40" />
         <div
           className="absolute inset-0"
-          style={{ background: "radial-gradient(130% 120% at 50% 0%, transparent 40%, rgba(0,0,0,0.80) 100%)" }}
+          style={{ background: "radial-gradient(130% 120% at 50% 0%, transparent 40%, rgba(0,0,0,0.75) 100%)" }}
         />
       </div>
 
-      {/* hairline frame — bumped to /22 so it reads on pure black */}
+      {/* hairline frame */}
       <div className="absolute inset-[1.6cqw] rounded-[1.1cqw] border border-white/22" aria-hidden />
 
-      <div className="relative flex h-full flex-col px-[4cqw] py-[3.4cqw]">
-        {/* header */}
+      <div className="relative flex h-full flex-col px-[4cqw] py-[3.2cqw]">
+        {/* header row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-[0.7cqw]">
             <Dot color="#ff5f57" />
             <Dot color="#febc2e" />
             <Dot color="#28c840" />
           </div>
-          <div className="label text-[1.05cqw] text-white/65">
-            {EVENT_NAME} · 2026
-          </div>
+          <div className="label text-[1.05cqw] text-white/65">{EVENT_NAME} · 2026</div>
         </div>
 
-        {/* headline block */}
-        <div className="mt-[3cqw]">
+        {/* headline — slightly more compact to free space */}
+        <div className="mt-[2.2cqw]">
           <div className="label text-[1.05cqw] text-white/60">Personal agenda</div>
-          <h1 className="serif mt-[0.8cqw] text-[7cqw] font-semibold leading-[0.98] text-white">
-            <span className="truncate">{possessive}</span>{" "}
+          <h1 className="serif mt-[0.6cqw] text-[5.8cqw] font-semibold leading-[0.98] text-white">
+            <span>{possessive}</span>{" "}
             <span className="serif-italic font-normal text-white/90">agenda</span>
           </h1>
-          <div className="mt-[1.4cqw] label text-[1.15cqw] text-white/70">
+          <div className="mt-[1.1cqw] label text-[1.1cqw] text-white/70">
             <span className="text-white">{total}</span> session{total === 1 ? "" : "s"}
-            <span className="mx-[0.7cqw] text-white/30">/</span>
+            <span className="mx-[0.6cqw] text-white/30">/</span>
             <span className="text-white">{days}</span> day{days === 1 ? "" : "s"}
-            <span className="mx-[0.7cqw] text-white/30">/</span> 15–17 May
+            <span className="mx-[0.6cqw] text-white/30">/</span> 15–17 May
           </div>
         </div>
 
         {/* topic pills */}
         {topics.length > 0 && (
-          <div className="mt-[1.8cqw] flex flex-wrap gap-[0.7cqw]">
+          <div className="mt-[1.5cqw] flex flex-wrap gap-[0.6cqw]">
             {topics.map((t) => {
               const c = pillColors(t.topic);
               return (
                 <span
                   key={t.topic}
-                  className="rounded-full px-[1cqw] py-[0.4cqw] font-mono text-[1.1cqw] lowercase tracking-tight"
+                  className="rounded-full px-[0.9cqw] py-[0.35cqw] font-mono text-[1.0cqw] lowercase tracking-tight"
                   style={{ backgroundColor: c.bg, border: `1px solid ${c.border}`, color: c.fg }}
                 >
                   {t.topic}
@@ -105,49 +110,46 @@ export default function HeroCard({
 
         <div className="flex-1" />
 
-        {/* bottom: day counts + highlights */}
-        <div className="grid grid-cols-[1.05fr_1fr] gap-[3cqw] border-t border-white/20 pt-[1.8cqw]">
-          <div className="grid grid-cols-3 gap-[1.2cqw]">
-            {EVENT_DAYS.map((d) => (
-              <div key={d} className="flex flex-col">
-                <div className="label text-[0.85cqw] text-white/55">{DAY_NUM[d]}</div>
-                <div className="serif mt-[0.3cqw] text-[3.2cqw] font-semibold leading-none text-white">
-                  {byDay[d] ?? 0}
+        {/* 3-column day breakdown */}
+        <div className="grid grid-cols-3 gap-[2cqw] border-t border-white/20 pt-[1.6cqw]">
+          {EVENT_DAYS.map((d) => {
+            const daySessions = byDaySessions[d] ?? [];
+            const n = byDay[d] ?? 0;
+            const shown = daySessions.slice(0, 3);
+            const extra = n - 3;
+            return (
+              <div key={d} className="flex min-w-0 flex-col">
+                <div className="flex items-baseline justify-between gap-1">
+                  <div className="label text-[0.85cqw] text-white/55">{DAY_LABEL[d].label}</div>
+                  <div className="serif text-[2.2cqw] font-semibold leading-none text-white">{n}</div>
                 </div>
-                <div className="mt-[0.7cqw] flex gap-[0.25cqw]">
-                  {(byDay[d] ?? 0) === 0 ? (
-                    <span className="h-[0.32cqw] w-full rounded-full bg-white/20" />
+                <div className="mt-[0.6cqw] h-px bg-white/15" />
+                <ul className="mt-[0.7cqw] space-y-[0.55cqw]">
+                  {shown.length === 0 ? (
+                    <li className="label text-[0.85cqw] text-white/25">nothing yet</li>
                   ) : (
-                    Array.from({ length: Math.min(byDay[d] ?? 0, 7) }).map((_, i) => (
-                      <span key={i} className="h-[0.32cqw] flex-1 min-w-[0.5cqw] rounded-full bg-white/90" />
+                    shown.map((s) => (
+                      <li key={s.id} className="flex items-baseline gap-[0.5cqw]">
+                        <span className="shrink-0 font-mono text-[0.82cqw] text-white/45">
+                          {formatTime(s.startsAt)}
+                        </span>
+                        <span className="serif truncate text-[1.05cqw] leading-tight text-white/85">
+                          {s.title === "TBA" ? "To be announced" : s.title}
+                        </span>
+                      </li>
                     ))
                   )}
-                </div>
+                  {extra > 0 && (
+                    <li className="label text-[0.82cqw] text-white/35">+{extra} more</li>
+                  )}
+                </ul>
               </div>
-            ))}
-          </div>
-
-          <div className="min-w-0">
-            <div className="label text-[0.85cqw] text-white/55">On your list</div>
-            <ul className="mt-[0.7cqw] space-y-[0.55cqw]">
-              {highlights.length === 0 ? (
-                <li className="text-[1.15cqw] text-white/50">— nothing picked yet —</li>
-              ) : (
-                highlights.map((s) => (
-                  <li key={s.id} className="flex items-baseline gap-[0.7cqw]">
-                    <span className="font-mono text-[0.95cqw] text-white/55">{formatTime(s.startsAt)}</span>
-                    <span className="serif truncate text-[1.35cqw] leading-tight text-white/90">
-                      {s.title === "TBA" ? "To be announced" : s.title}
-                    </span>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
+            );
+          })}
         </div>
 
         {/* footer */}
-        <div className="mt-[1.6cqw] flex items-center justify-between font-mono text-[0.95cqw] text-white/50">
+        <div className="mt-[1.4cqw] flex items-center justify-between font-mono text-[0.9cqw] text-white/50">
           <span>plan yours · aie-agenda</span>
           <span className="text-white/70">{footer}</span>
         </div>
@@ -158,20 +160,4 @@ export default function HeroCard({
 
 function Dot({ color }: { color: string }) {
   return <span className="h-[0.9cqw] w-[0.9cqw] rounded-full" style={{ background: color, opacity: 0.9 }} />;
-}
-
-function pickHighlights(sessions: Session[], n: number): Session[] {
-  const score = (s: Session) => {
-    const t = (s.topics ?? []).join(" ").toLowerCase();
-    if (t.includes("keynote")) return 4;
-    if (s.format === "talk" && t.includes("main stage")) return 3;
-    if (s.format === "workshop") return 2;
-    if (s.format === "leadership") return 1;
-    return 0;
-  };
-  return sessions
-    .slice()
-    .sort((a, b) => score(b) - score(a) || a.startsAt.localeCompare(b.startsAt))
-    .slice(0, n)
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 }

@@ -77,8 +77,6 @@ export async function GET(req: Request) {
   const byDay = countByDay(sessions);
   const total = sessions.length;
   const days = EVENT_DAYS.filter((d) => (byDay[d] ?? 0) > 0).length || EVENT_DAYS.length;
-  const highlights = pickHighlights(sessions, 3);
-
   const label = (size: number, color = "rgba(255,255,255,0.45)") =>
     ({
       fontFamily: MONO,
@@ -237,79 +235,70 @@ export async function GET(req: Request) {
 
         <div style={{ flex: 1 }} />
 
-        {/* bottom */}
+        {/* 3-column day breakdown */}
         <div
           style={{
             display: "flex",
-            borderTop: "1px solid rgba(255,255,255,0.13)",
-            paddingTop: 22,
-            gap: 44,
+            gap: 28,
+            borderTop: "1px solid rgba(255,255,255,0.18)",
+            paddingTop: 20,
           }}
         >
-          <div style={{ display: "flex", flex: 1.05, gap: 18 }}>
-            {EVENT_DAYS.map((d) => {
-              const n = byDay[d] ?? 0;
-              return (
-                <div key={d} style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                  <div style={label(11, "rgba(255,255,255,0.35)")}>{DAY_NUM[d]}</div>
-                  <div
-                    style={{
-                      fontFamily: SERIF,
-                      fontWeight: 600,
-                      fontSize: 44,
-                      lineHeight: 1,
-                      marginTop: 6,
-                      color: "#fff",
-                    }}
-                  >
+          {EVENT_DAYS.map((d) => {
+            const daySessions = sessions
+              .filter((s) => s.day === d)
+              .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+            const n = byDay[d] ?? 0;
+            const shown = daySessions.slice(0, 3);
+            const extra = n - 3;
+            return (
+              <div key={d} style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+                {/* day label + count inline */}
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                  <div style={label(10, "rgba(255,255,255,0.55)")}>{DAY_NUM[d]}</div>
+                  <div style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, color: "#fff" }}>
                     {n}
                   </div>
-                  <div style={{ display: "flex", gap: 3, marginTop: 10 }}>
-                    {n === 0 ? (
-                      <div style={{ height: 4, flex: 1, borderRadius: 99, background: "rgba(255,255,255,0.1)" }} />
-                    ) : (
-                      Array.from({ length: Math.min(n, 7) }).map((_, i) => (
-                        <div
-                          key={i}
-                          style={{ height: 4, flex: 1, borderRadius: 99, background: "rgba(255,255,255,0.75)" }}
-                        />
-                      ))
-                    )}
-                  </div>
                 </div>
-              );
-            })}
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-            <div style={label(11, "rgba(255,255,255,0.35)")}>On your list</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
-              {highlights.length === 0 ? (
-                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)" }}>— nothing picked yet —</div>
-              ) : (
-                highlights.map((s) => (
-                  <div key={s.id} style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                    <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-                      {formatTime(s.startsAt)}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: SERIF,
-                        fontSize: 19,
-                        color: "rgba(255,255,255,0.85)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        maxWidth: 360,
-                      }}
-                    >
-                      {s.title === "TBA" ? "To be announced" : s.title}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+                {/* rule */}
+                <div style={{ height: 1, background: "rgba(255,255,255,0.15)", marginTop: 8 }} />
+                {/* sessions */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 10 }}>
+                  {shown.length === 0 ? (
+                    <div style={{ fontFamily: MONO, fontSize: 11, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: 2 }}>
+                      nothing yet
+                    </div>
+                  ) : (
+                    shown.map((s) => (
+                      <div key={s.id} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                        <span style={{ fontFamily: MONO, fontSize: 11, color: "rgba(255,255,255,0.45)", flexShrink: 0 }}>
+                          {formatTime(s.startsAt)}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: SERIF,
+                            fontSize: 14,
+                            lineHeight: 1.25,
+                            color: "rgba(255,255,255,0.85)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {s.title === "TBA" ? "To be announced" : s.title}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                  {extra > 0 && (
+                    <div style={{ fontFamily: MONO, fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 1.5 }}>
+                      +{extra} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* footer */}
