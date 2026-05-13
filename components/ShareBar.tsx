@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toPng } from "html-to-image";
 import { buildIcs } from "@/lib/api";
-import { X_TAG } from "@/lib/site";
+import { X_TAG, EVENT_NAME, EVENT_DATES } from "@/lib/site";
 import type { Session } from "@/lib/types";
 
 function download(filename: string, dataUrl: string) {
@@ -13,6 +13,23 @@ function download(filename: string, dataUrl: string) {
   document.body.appendChild(a);
   a.click();
   a.remove();
+}
+
+function buildTweet(_name: string, sessions: Session[]): string {
+  return `This is my ${EVENT_NAME} agenda — ${sessions.length} sessions across ${EVENT_DATES}.\n\nWhat's yours? ${X_TAG}`;
+}
+
+async function renderPng(cardNodeId: string, name: string): Promise<{ dataUrl: string; file: File } | null> {
+  const node = document.getElementById(cardNodeId);
+  if (!node) return null;
+  const scale = Math.max(1, Math.round((1200 / node.offsetWidth) * 2));
+  const dataUrl = await toPng(node, { pixelRatio: scale, cacheBust: true, backgroundColor: "#000000" });
+  const slug = (name.trim() || "my").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const filename = `aie-singapore-agenda-${slug || "card"}.png`;
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const file = new File([blob], filename, { type: "image/png" });
+  return { dataUrl, file };
 }
 
 export default function ShareBar({
@@ -25,11 +42,10 @@ export default function ShareBar({
   cardNodeId: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const [busy, setBusy] = useState<null | "png">(null);
+  const [busy, setBusy] = useState<null | "x" | "png">(null);
 
   const url = typeof window !== "undefined" ? window.location.href : "";
-  const who = name.trim() ? `${name.trim()}'s` : "my";
-  const tweet = `Built ${who} AI Engineer Singapore agenda — ${sessions.length} sessions across 3 days. Plan yours 👇 ${X_TAG}`;
+  const tweet = buildTweet(name, sessions);
 
   async function copyLink() {
     try {
@@ -41,31 +57,47 @@ export default function ShareBar({
     }
   }
 
-  function shareX() {
-    const u = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}&url=${encodeURIComponent(url)}`;
-    window.open(u, "_blank", "noopener,noreferrer");
+  async function shareX() {
+    setBusy("x");
+    try {
+      const png = await renderPng(cardNodeId, name);
+
+      const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+      // Mobile: Web Share API with image file attached
+      if (isMobile && png && navigator.canShare?.({ files: [png.file] })) {
+        await navigator.share({ files: [png.file], text: tweet, url });
+        return;
+      }
+
+      // Desktop: download image, open X compose with caption pre-filled — user attaches the image
+      if (png) download(png.file.name, png.dataUrl);
+      const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`;
+      window.open(intentUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      // User cancelled share sheet or render failed — fall back to plain intent
+      if (err instanceof Error && err.name !== "AbortError") {
+        const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}&url=${encodeURIComponent(url)}`;
+        window.open(intentUrl, "_blank", "noopener,noreferrer");
+      }
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function downloadPng() {
-    const node = document.getElementById(cardNodeId);
-    if (!node) return;
     setBusy("png");
     try {
-      const scale = Math.max(1, Math.round((1200 / node.offsetWidth) * 2));
-      const dataUrl = await toPng(node, {
-        pixelRatio: scale,
-        cacheBust: true,
-        backgroundColor: "#000000",
-      });
-      const slug = (name.trim() || "my").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      download(`aie-singapore-agenda-${slug || "card"}.png`, dataUrl);
+      const png = await renderPng(cardNodeId, name);
+      if (png) download(png.file.name, png.dataUrl);
     } finally {
       setBusy(null);
     }
   }
 
   function downloadIcs() {
-    const ics = buildIcs(sessions, `${who === "my" ? "My" : who} AI Engineer Singapore 2026`);
+    const who = name.trim() ? `${name.trim()}'s` : "My";
+    const ics = buildIcs(sessions, `${who} ${EVENT_NAME} 2026`);
     const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
     const dataUrl = URL.createObjectURL(blob);
     download("aie-singapore-agenda.ics", dataUrl);
@@ -77,9 +109,10 @@ export default function ShareBar({
       <button
         type="button"
         onClick={shareX}
-        className="rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition-opacity hover:opacity-90"
+        disabled={busy === "x"}
+        className="rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        Share on X
+        {busy === "x" ? "Preparing…" : "Share on X"}
       </button>
       <button
         type="button"
