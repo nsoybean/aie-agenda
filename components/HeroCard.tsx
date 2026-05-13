@@ -107,7 +107,7 @@ export default function HeroCard({
             </div>
             {cardUrl && (
               <div
-                className="rounded-[0.4cqw] p-[0.4cqw]"
+                className="rounded-[0.4cqw] p-[0.2cqw]"
                 style={{ background: theme.isDark ? "rgba(255,255,255,0.90)" : "rgba(0,0,0,0.08)" }}
               >
                 <QRCode
