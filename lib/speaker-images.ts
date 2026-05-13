@@ -1,4 +1,4 @@
-const BASE = "https://www.ai.engineer/speakers";
+const BASE = "https://www.ai.engineer/singapore/speakers";
 
 /**
  * Generate URL candidates for a speaker's headshot, in priority order.
@@ -20,9 +20,9 @@ export function getSpeakerImageCandidates(
   const firstName = fullSlug.split("-")[0];
 
   if (fullSlug) candidates.push(`${BASE}/${fullSlug}.jpg`);
-  // also try jpeg/png for common edge cases with the full slug
   if (fullSlug) candidates.push(`${BASE}/${fullSlug}.jpeg`);
   if (fullSlug) candidates.push(`${BASE}/${fullSlug}.png`);
+  if (fullSlug) candidates.push(`${BASE}/${fullSlug}.webp`);
   if (firstName && firstName !== fullSlug) {
     candidates.push(`${BASE}/${firstName}.jpg`);
     candidates.push(`${BASE}/${firstName}.jpeg`);

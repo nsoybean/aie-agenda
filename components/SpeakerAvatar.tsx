@@ -36,7 +36,7 @@ export default function SpeakerAvatar({
         alt={name}
         width={size}
         height={size}
-        className={`rounded-full object-cover ring-1 ring-white/20 ${className}`}
+        className={`rounded-full object-cover ring-2 ring-white ${className}`}
         style={{ width: px, height: px, flexShrink: 0 }}
         onError={() => setIdx((i) => i + 1)}
       />
