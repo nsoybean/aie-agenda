@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getSpeakerImageCandidates } from "@/lib/speaker-images";
 import { pillColors } from "@/lib/theme";
 
@@ -21,24 +21,42 @@ export default function SpeakerAvatar({
   size?: number;
   className?: string;
 }) {
-  const candidates = getSpeakerImageCandidates(name, apiImageUrl);
-  const [idx, setIdx] = useState(0);
-  const showImg = idx < candidates.length;
+  // undefined = still probing, null = all failed, string = resolved URL
+  const [resolvedUrl, setResolvedUrl] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    const candidates = getSpeakerImageCandidates(name, apiImageUrl);
+
+    function tryNext(idx: number) {
+      if (idx >= candidates.length) {
+        if (!cancelled) setResolvedUrl(null);
+        return;
+      }
+      const img = new Image();
+      img.onload = () => { if (!cancelled) setResolvedUrl(candidates[idx]); };
+      img.onerror = () => { if (!cancelled) tryNext(idx + 1); };
+      img.src = candidates[idx];
+    }
+
+    setResolvedUrl(undefined);
+    tryNext(0);
+    return () => { cancelled = true; };
+  }, [name, apiImageUrl]);
 
   const px = `${size}px`;
   const c = pillColors(name);
 
-  if (showImg) {
+  if (resolvedUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={candidates[idx]}
+        src={resolvedUrl}
         alt={name}
         width={size}
         height={size}
         className={`rounded-full object-cover ring-2 ring-white ${className}`}
         style={{ width: px, height: px, flexShrink: 0 }}
-        onError={() => setIdx((i) => i + 1)}
       />
     );
   }
@@ -52,9 +70,10 @@ export default function SpeakerAvatar({
         background: c.bg,
         border: `1px solid ${c.border}`,
         color: c.fg,
+        opacity: resolvedUrl === undefined ? 0.5 : 1,
       }}
     >
-      {initials(name)}
+      {resolvedUrl === undefined ? "" : initials(name)}
     </span>
   );
 }
