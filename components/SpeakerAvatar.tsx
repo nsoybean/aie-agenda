@@ -61,6 +61,15 @@ export default function SpeakerAvatar({
     );
   }
 
+  if (resolvedUrl === undefined) {
+    return (
+      <span
+        className={`inline-flex shrink-0 rounded-full animate-pulse ${className}`}
+        style={{ width: px, height: px, background: "rgba(255,255,255,0.1)" }}
+      />
+    );
+  }
+
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center rounded-full text-sm font-semibold ${className}`}
@@ -70,10 +79,9 @@ export default function SpeakerAvatar({
         background: c.bg,
         border: `1px solid ${c.border}`,
         color: c.fg,
-        opacity: resolvedUrl === undefined ? 0.5 : 1,
       }}
     >
-      {resolvedUrl === undefined ? "" : initials(name)}
+      {initials(name)}
     </span>
   );
 }
