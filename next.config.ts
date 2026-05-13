@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
+  outputFileTracingIncludes: {
+    "/api/og": ["./assets/fonts/**"],
+  },
 };
 
 export default nextConfig;

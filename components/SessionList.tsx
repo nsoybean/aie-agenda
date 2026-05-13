@@ -1,0 +1,104 @@
+"use client";
+
+import { DAY_LABEL, formatTime, groupByDay, speakerLine } from "@/lib/api";
+import { pillColors } from "@/lib/theme";
+import type { Session } from "@/lib/types";
+
+export default function SessionList({
+  sessions,
+  conflictIds,
+  onSelect,
+  selectedId,
+}: {
+  sessions: Session[];
+  conflictIds?: Set<string>;
+  onSelect?: (s: Session) => void;
+  selectedId?: string | null;
+}) {
+  const groups = groupByDay(sessions);
+  return (
+    <div className="space-y-8">
+      {groups.map(({ day, sessions: daySessions }) => (
+        <section key={day}>
+          <div className="mb-3 flex items-center gap-3">
+            <h3 className="font-mono text-sm tracking-[0.22em] text-ink-dim">
+              {DAY_LABEL[day]?.short ?? day}
+            </h3>
+            <span className="font-mono text-xs text-ink-faint">{daySessions.length}</span>
+            <div className="h-px flex-1 bg-line" />
+          </div>
+          <ul className="space-y-1.5">
+            {daySessions.map((s) => (
+              <SessionRow
+                key={s.id}
+                session={s}
+                conflicting={conflictIds?.has(s.id) ?? false}
+                active={selectedId === s.id}
+                onClick={onSelect ? () => onSelect(s) : undefined}
+              />
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function SessionRow({
+  session: s,
+  conflicting,
+  active,
+  onClick,
+}: {
+  session: Session;
+  conflicting: boolean;
+  active: boolean;
+  onClick?: () => void;
+}) {
+  const track = s.track && s.track !== "TBD" ? s.track : null;
+  const tc = track ? pillColors(track) : null;
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        className={`group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors sm:gap-4 sm:px-4 ${
+          active
+            ? "border-line-strong bg-white/[0.06]"
+            : "border-transparent hover:border-line hover:bg-white/[0.03]"
+        }`}
+      >
+        <span className="w-[3.2rem] shrink-0 font-mono text-xs text-ink-dim sm:text-sm">
+          {formatTime(s.startsAt)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <span className="truncate text-[15px] font-medium text-ink">
+              {s.title === "TBA" ? <span className="text-ink-faint">To be announced</span> : s.title}
+            </span>
+            {conflicting && (
+              <span
+                title="Overlaps with another session you picked"
+                className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-amber-300/90"
+              >
+                ⚠ clash
+              </span>
+            )}
+          </span>
+          {speakerLine(s) && (
+            <span className="mt-0.5 block truncate text-xs text-ink-faint">{speakerLine(s)}</span>
+          )}
+        </span>
+        {track && tc && (
+          <span
+            className="hidden shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] lowercase tracking-tight sm:inline"
+            style={{ backgroundColor: tc.bg, border: `1px solid ${tc.border}`, color: tc.fg }}
+          >
+            {track}
+          </span>
+        )}
+        <span className="shrink-0 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100">→</span>
+      </button>
+    </li>
+  );
+}
