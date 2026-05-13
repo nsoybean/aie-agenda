@@ -12,6 +12,7 @@ import SessionList from "./SessionList";
 import SessionDetailPanel from "./SessionDetailPanel";
 import ShareBar from "./ShareBar";
 import ThemeSelector from "./ThemeSelector";
+import { XIcon, LinkedInIcon } from "./BrandIcons";
 
 const CARD_ID = "agenda-hero-card";
 
@@ -90,6 +91,39 @@ export default function CardView({
         <p className="mt-4 text-sm text-amber-300/80">
           ⚠ {nClashes} sessions overlap — tap a row marked "clash" to see details.
         </p>
+      )}
+
+      {/* identity strip */}
+      {(xHandle || linkedin) && (
+        <div className="mt-8 border-t border-line pt-6">
+          {name.trim() && (
+            <div className="serif mb-2 text-base font-semibold leading-tight text-ink">{name.trim()}</div>
+          )}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+            {xHandle && (
+              <a
+                href={`https://x.com/${xHandle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 font-mono text-sm text-ink-dim transition-colors hover:text-ink"
+              >
+                <XIcon className="h-3.5 w-3.5 shrink-0" />
+                @{xHandle}
+              </a>
+            )}
+            {linkedin && (
+              <a
+                href={`https://linkedin.com/in/${linkedin}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 font-mono text-sm text-ink-dim transition-colors hover:text-ink"
+              >
+                <LinkedInIcon className="h-3.5 w-3.5 shrink-0" />
+                {linkedin}
+              </a>
+            )}
+          </div>
+        </div>
       )}
 
       {/* full agenda */}
