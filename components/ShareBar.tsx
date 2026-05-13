@@ -89,7 +89,11 @@ export default function ShareBar({
     setBusy("png");
     try {
       const png = await renderPng(cardNodeId, name);
-      if (png) download(png.file.name, png.dataUrl);
+      if (!png) return;
+      // Use blob URL — triggers a real file download on both desktop and mobile (iOS 13+, Android Chrome)
+      const blobUrl = URL.createObjectURL(png.file);
+      download(png.file.name, blobUrl);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
     } finally {
       setBusy(null);
     }
