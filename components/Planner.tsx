@@ -120,7 +120,7 @@ export default function Planner({
   const cardHref = cardPath({ name: cleanName, ids, ...(cleanX && { x: cleanX }), ...(cleanLinkedIn && { linkedin: cleanLinkedIn }) }, allIds);
 
   return (
-    <div className="mx-auto w-full max-w-6xl overflow-x-hidden px-5 pb-28 pt-8 sm:pt-12 lg:pb-12">
+    <div className="mx-auto w-full max-w-6xl px-5 pb-28 pt-8 sm:pt-12 lg:pb-12">
       {/* header */}
       <header className="flex flex-col gap-3">
         <div className="label text-[11px] text-ink-faint">{EVENT_NAME} · 15–17 May 2026</div>
@@ -133,7 +133,7 @@ export default function Planner({
         </p>
       </header>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
         {/* left: filters + list */}
         <div className="order-2 lg:order-1">
           {/* filters */}
