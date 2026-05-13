@@ -120,7 +120,7 @@ export default function Planner({
   const cardHref = cardPath({ name: cleanName, ids, ...(cleanX && { x: cleanX }), ...(cleanLinkedIn && { linkedin: cleanLinkedIn }) }, allIds);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-5 pb-28 pt-8 sm:pt-12 lg:pb-12">
+    <div className="mx-auto w-full max-w-6xl overflow-x-hidden px-5 pb-28 pt-8 sm:pt-12 lg:pb-12">
       {/* header */}
       <header className="flex flex-col gap-3">
         <div className="label text-[11px] text-ink-faint">{EVENT_NAME} · 15–17 May 2026</div>
@@ -393,7 +393,7 @@ function PlannerRow({
         {formatTime(s.startsAt)}
       </span>
       <button type="button" onClick={onDetail} className="min-w-0 flex-1 text-left">
-        <span className="flex items-center gap-2">
+        <span className="flex min-w-0 items-center gap-2">
           <span className="truncate text-[15px] font-medium text-ink">
             {s.title === "TBA" ? <span className="text-ink-faint">To be announced</span> : s.title}
           </span>
@@ -407,7 +407,7 @@ function PlannerRow({
           )}
         </span>
         {speakerLine(s) && (
-          <span className="mt-0.5 block truncate text-xs text-ink-faint">{speakerLine(s)}</span>
+          <span className="mt-0.5 block min-w-0 truncate text-xs text-ink-faint">{speakerLine(s)}</span>
         )}
       </button>
       {track && tc && (
