@@ -22,7 +22,7 @@ function buildTweet(_name: string, sessions: Session[]): string {
 async function renderPng(cardNodeId: string, name: string): Promise<{ dataUrl: string; file: File } | null> {
   const node = document.getElementById(cardNodeId);
   if (!node) return null;
-  const scale = Math.max(1, Math.round((1200 / node.offsetWidth) * 2));
+  const scale = Math.max(1, 1200 / node.offsetWidth);
   const dataUrl = await toPng(node, { pixelRatio: scale, cacheBust: true, backgroundColor: "#000000" });
   const slug = (name.trim() || "my").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const filename = `aie-singapore-agenda-${slug || "card"}.png`;
