@@ -212,7 +212,7 @@ export async function GET(req: Request) {
               .filter((s) => s.day === d)
               .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
             const n = byDay[d] ?? 0;
-            const shown = daySessions.slice(0, 3);
+            const shown = daySessions.slice(0, 5);
             const extra = n - 3;
             return (
               <div key={d} style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
@@ -223,7 +223,7 @@ export async function GET(req: Request) {
                   </div>
                 </div>
                 <div style={{ height: 1, background: theme.divider, marginTop: 8 }} />
-                <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 10 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 8 }}>
                   {shown.length === 0 ? (
                     <div style={{ fontFamily: MONO, fontSize: 11, color: tx(0.22), textTransform: "uppercase", letterSpacing: 2 }}>
                       nothing yet
@@ -235,7 +235,7 @@ export async function GET(req: Request) {
                           {formatTime(s.startsAt)}
                         </span>
                         <span style={{
-                          fontFamily: SERIF, fontSize: 14, lineHeight: 1.25, color: tx(0.85),
+                          fontFamily: SERIF, fontSize: 13, lineHeight: 1.2, color: tx(0.85),
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         }}>
                           {s.title === "TBA" ? "To be announced" : s.title}

@@ -67,9 +67,9 @@ export const THEMES: Record<ThemeId, CardTheme> = {
   },
 
   vercel: {
-    // Vercel brand: pure black + white, geometric, zero gradients
+    // AI Engineer Singapore brand: pure black, stark, no glow — matches ai.engineer/singapore
     id: "vercel",
-    label: "Vercel",
+    label: "Black",
     swatch: "#000000",
     isDark: true,
     bg: "#000000",
@@ -138,8 +138,8 @@ export const THEMES: Record<ThemeId, CardTheme> = {
   },
 };
 
-export const THEME_ORDER: ThemeId[] = ["midnight", "light", "vercel", "claude", "codex", "dusk"];
-export const DEFAULT_THEME: ThemeId = "midnight";
+export const THEME_ORDER: ThemeId[] = ["vercel", "midnight", "dusk", "claude", "codex", "light"];
+export const DEFAULT_THEME: ThemeId = "vercel";
 
 export function getTheme(id?: string | null): CardTheme {
   return THEMES[(id as ThemeId) ?? DEFAULT_THEME] ?? THEMES.midnight;

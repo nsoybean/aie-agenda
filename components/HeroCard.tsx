@@ -169,7 +169,7 @@ export default function HeroCard({
           {EVENT_DAYS.map((d) => {
             const daySessions = byDaySessions[d] ?? [];
             const n = byDay[d] ?? 0;
-            const shown = daySessions.slice(0, 3);
+            const shown = daySessions.slice(0, 5);
             const extra = n - 3;
             return (
               <div key={d} className="flex min-w-0 flex-col">
@@ -182,7 +182,7 @@ export default function HeroCard({
                   </div>
                 </div>
                 <div className="mt-[0.6cqw] h-px" style={{ background: theme.divider }} />
-                <ul className="mt-[0.7cqw] space-y-[0.55cqw]">
+                <ul className="mt-[0.6cqw] space-y-[0.38cqw]">
                   {shown.length === 0 ? (
                     <li className="label text-[0.82cqw]" style={{ color: tx(0.22) }}>nothing yet</li>
                   ) : (
