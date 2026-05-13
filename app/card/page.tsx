@@ -11,10 +11,10 @@ export const dynamic = "force-dynamic";
 
 async function load(searchParams: SP) {
   const sp = await searchParams;
-  const { name, ids } = decodeAgenda(sp);
+  const { name, ids, theme, x, linkedin } = decodeAgenda(sp);
   const schedule = await getSchedule();
   const sessions = resolveSessions(schedule, ids);
-  return { name, ids: sessions.map((s) => s.id), sessions };
+  return { name, ids: sessions.map((s) => s.id), sessions, theme, x, linkedin };
 }
 
 export async function generateMetadata({ searchParams }: { searchParams: SP }): Promise<Metadata> {
@@ -47,7 +47,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }): 
 }
 
 export default async function CardPage({ searchParams }: { searchParams: SP }) {
-  const { name, ids, sessions } = await load(searchParams);
+  const { name, ids, sessions, theme, x, linkedin } = await load(searchParams);
 
   if (!sessions.length) {
     return (
@@ -72,8 +72,11 @@ export default async function CardPage({ searchParams }: { searchParams: SP }) {
     <CardView
       name={name}
       sessions={sessions}
-      editHref={plannerPath({ name, ids })}
+      editHref={plannerPath({ name, ids, theme, ...(x && { x }), ...(linkedin && { linkedin }) })}
       siteHost={siteHost()}
+      initialTheme={theme}
+      xHandle={x}
+      linkedin={linkedin}
     />
   );
 }

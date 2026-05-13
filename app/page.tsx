@@ -20,6 +20,8 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
       topics={topTopics}
       initialName={initial.name}
       initialIds={initial.ids.filter((id) => validIds.has(id))}
+      initialX={initial.x ?? ""}
+      initialLinkedIn={initial.linkedin ?? ""}
     />
   );
 }

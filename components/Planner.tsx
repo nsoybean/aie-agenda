@@ -11,7 +11,7 @@ import {
   speakerLine,
 } from "@/lib/api";
 import { accentFor, pillColors } from "@/lib/theme";
-import { cardPath, plannerPath, sanitizeName } from "@/lib/state";
+import { cardPath, plannerPath, sanitizeName, sanitizeX, sanitizeLinkedIn } from "@/lib/state";
 import { EVENT_NAME } from "@/lib/site";
 import type { Session, SessionFormat, TopicCount } from "@/lib/types";
 import HeroCard from "./HeroCard";
@@ -31,15 +31,21 @@ export default function Planner({
   topics,
   initialName,
   initialIds,
+  initialX = "",
+  initialLinkedIn = "",
 }: {
   sessions: Session[];
   topics: TopicCount[];
   initialName: string;
   initialIds: string[];
+  initialX?: string;
+  initialLinkedIn?: string;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [ids, setIds] = useState<string[]>(initialIds);
+  const [xHandle, setXHandle] = useState(initialX);
+  const [linkedin, setLinkedIn] = useState(initialLinkedIn);
   const [format, setFormat] = useState<FormatFilter>("all");
   const [topic, setTopic] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -57,6 +63,8 @@ export default function Planner({
   );
   const conflicts = useMemo(() => conflictIdSet(selected), [selected]);
   const cleanName = sanitizeName(name);
+  const cleanX = sanitizeX(xHandle);
+  const cleanLinkedIn = sanitizeLinkedIn(linkedin);
 
   // keep the URL in sync (debounced) so a refresh / bookmark restores the agenda
   const first = useRef(true);
@@ -66,10 +74,13 @@ export default function Planner({
       return;
     }
     const t = setTimeout(() => {
-      router.replace(plannerPath({ name: cleanName, ids }), { scroll: false });
+      router.replace(
+        plannerPath({ name: cleanName, ids, ...(cleanX && { x: cleanX }), ...(cleanLinkedIn && { linkedin: cleanLinkedIn }) }),
+        { scroll: false },
+      );
     }, 350);
     return () => clearTimeout(t);
-  }, [cleanName, ids, router]);
+  }, [cleanName, ids, cleanX, cleanLinkedIn, router]);
 
   function toggle(id: string) {
     setIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -105,7 +116,7 @@ export default function Planner({
   );
   const groups = groupByDay(filtered);
   const total = ids.length;
-  const cardHref = cardPath({ name: cleanName, ids });
+  const cardHref = cardPath({ name: cleanName, ids, ...(cleanX && { x: cleanX }), ...(cleanLinkedIn && { linkedin: cleanLinkedIn }) });
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 pb-28 pt-8 sm:pt-12 lg:pb-12">
@@ -195,7 +206,7 @@ export default function Planner({
           <div className="rounded-2xl border border-line-strong bg-surface-1 p-4 sm:p-5">
             <div className="label text-[10px] text-ink-faint">Your shareable card</div>
             <div className="mt-3 overflow-hidden rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
-              <HeroCard name={cleanName} sessions={selected} footer="ai.engineer/singapore" />
+              <HeroCard name={cleanName} sessions={selected} footer="ai.engineer/singapore" xHandle={cleanX} linkedin={cleanLinkedIn} />
             </div>
 
             <label className="mt-4 block">
@@ -208,6 +219,35 @@ export default function Planner({
                 className="mt-1.5 w-full rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-line-strong"
               />
             </label>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="label text-[10px] text-ink-faint">X / Twitter</span>
+                <div className="relative mt-1.5">
+                  <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-ink-faint">@</span>
+                  <input
+                    value={xHandle}
+                    maxLength={15}
+                    onChange={(e) => setXHandle(sanitizeX(e.target.value))}
+                    placeholder="handle"
+                    className="w-full rounded-xl border border-line bg-surface-2 py-2 pl-6 pr-3 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-line-strong"
+                  />
+                </div>
+              </label>
+              <label className="block">
+                <span className="label text-[10px] text-ink-faint">LinkedIn</span>
+                <div className="relative mt-1.5">
+                  <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center font-mono text-[10px] text-ink-faint">in/</span>
+                  <input
+                    value={linkedin}
+                    maxLength={60}
+                    onChange={(e) => setLinkedIn(sanitizeLinkedIn(e.target.value))}
+                    placeholder="username"
+                    className="w-full rounded-xl border border-line bg-surface-2 py-2 pl-7 pr-3 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-line-strong"
+                  />
+                </div>
+              </label>
+            </div>
 
             <div className="mt-4 flex items-center justify-between text-sm">
               <span className="text-ink-dim">

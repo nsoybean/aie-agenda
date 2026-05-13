@@ -9,8 +9,9 @@ import {
   getSchedule,
   resolveSessions,
 } from "@/lib/api";
-import { pillColors } from "@/lib/theme";
+import { hueFor } from "@/lib/theme";
 import { decodeAgenda } from "@/lib/state";
+import { getTheme, pillColorsForTheme } from "@/lib/themes";
 import { EVENT_NAME } from "@/lib/site";
 import type { Session } from "@/lib/types";
 
@@ -65,9 +66,18 @@ const MONO = "JetBrains Mono";
 const SERIF = "Fraunces";
 const SANS = "Inter";
 
+const DAY_NUM_OG: Record<string, string> = {
+  "2026-05-15": "DAY 1 · FRI",
+  "2026-05-16": "DAY 2 · SAT",
+  "2026-05-17": "DAY 3 · SUN",
+};
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const { name, ids } = decodeAgenda(searchParams);
+  const { name, ids, theme: themeId, x } = decodeAgenda(searchParams);
+  const theme = getTheme(themeId);
+  const tx = theme.textAt;
+
   const schedule = await getSchedule().catch(() => null);
   const sessions = schedule ? resolveSessions(schedule, ids) : [];
 
@@ -77,7 +87,8 @@ export async function GET(req: Request) {
   const byDay = countByDay(sessions);
   const total = sessions.length;
   const days = EVENT_DAYS.filter((d) => (byDay[d] ?? 0) > 0).length || EVENT_DAYS.length;
-  const label = (size: number, color = "rgba(255,255,255,0.45)") =>
+
+  const label = (size: number, color = tx(0.50)) =>
     ({
       fontFamily: MONO,
       fontSize: size,
@@ -89,71 +100,38 @@ export async function GET(req: Request) {
   const img = (
     <div
       style={{
-        width: W,
-        height: H,
-        display: "flex",
-        flexDirection: "column",
-        background: "#000000",
-        color: "#fff",
-        fontFamily: SANS,
-        position: "relative",
-        overflow: "hidden",
+        width: W, height: H,
+        display: "flex", flexDirection: "column",
+        background: theme.bg, color: theme.text,
+        fontFamily: SANS, position: "relative", overflow: "hidden",
       }}
     >
-      {/* aurora */}
-      <div
-        style={{
+      {/* aurora glows */}
+      {theme.glows.map((g, i) => (
+        <div key={i} style={{
           position: "absolute",
-          top: -260,
-          left: -200,
-          width: 760,
-          height: 620,
-          background: "radial-gradient(closest-side, rgba(139,108,255,0.42), rgba(139,108,255,0))",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: -220,
-          right: -160,
-          width: 620,
-          height: 520,
-          background: "radial-gradient(closest-side, rgba(255,138,92,0.26), rgba(255,138,92,0))",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: -300,
-          left: 220,
-          width: 620,
-          height: 560,
-          background: "radial-gradient(closest-side, rgba(79,212,196,0.18), rgba(79,212,196,0))",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: W,
-          height: H,
-          background: "radial-gradient(130% 120% at 50% 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.9) 100%)",
-        }}
-      />
+          top: g.top, bottom: g.bottom, left: g.left, right: g.right,
+          width: g.w, height: g.h,
+          background: `radial-gradient(closest-side, ${g.color}, transparent)`,
+          filter: "blur(1px)",
+        }} />
+      ))}
+      {theme.vignette && (
+        <div style={{ position: "absolute", top: 0, left: 0, width: W, height: H, background: theme.vignette }} />
+      )}
+      {theme.id === "vercel" && (
+        <div style={{
+          position: "absolute", top: 0, left: 0, width: W, height: H,
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }} />
+      )}
 
       {/* hairline frame */}
-      <div
-        style={{
-          position: "absolute",
-          top: 26,
-          left: 26,
-          right: 26,
-          bottom: 26,
-          border: "1px solid rgba(255,255,255,0.13)",
-          borderRadius: 18,
-        }}
-      />
+      <div style={{
+        position: "absolute", top: 26, left: 26, right: 26, bottom: 26,
+        border: `1px solid ${theme.frameBorder}`, borderRadius: 18,
+      }} />
 
       {/* content */}
       <div
@@ -172,14 +150,14 @@ export async function GET(req: Request) {
             <div style={{ width: 13, height: 13, borderRadius: 99, background: "#febc2e" }} />
             <div style={{ width: 13, height: 13, borderRadius: 99, background: "#28c840" }} />
           </div>
-          <div style={label(13)}>{EVENT_NAME} · 2026</div>
+          <div style={label(13, tx(0.60))}>{EVENT_NAME} · 2026</div>
         </div>
 
         {/* headline */}
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 34 }}>
-          <div style={label(13)}>Personal agenda</div>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
+          <div style={label(13, tx(0.52))}>Personal agenda</div>
           <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", marginTop: 8 }}>
-            <span style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 96, lineHeight: 1, color: "#fff" }}>
+            <span style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 88, lineHeight: 1, color: theme.text }}>
               {possessive}
             </span>
             <span
@@ -187,45 +165,37 @@ export async function GET(req: Request) {
                 fontFamily: SERIF,
                 fontStyle: "italic",
                 fontWeight: 400,
-                fontSize: 96,
+                fontSize: 88,
                 lineHeight: 1,
-                color: "rgba(255,255,255,0.9)",
+                color: tx(0.88),
                 marginLeft: 20,
               }}
             >
               agenda
             </span>
           </div>
-          <div style={{ ...label(16, "rgba(255,255,255,0.55)"), marginTop: 20, display: "flex" }}>
-            <span style={{ color: "#fff" }}>{total}</span>
+          <div style={{ ...label(16, tx(0.60)), marginTop: 20, display: "flex" }}>
+            <span style={{ color: theme.text }}>{total}</span>
             <span style={{ marginLeft: 8 }}>session{total === 1 ? "" : "s"}</span>
-            <span style={{ margin: "0 12px", color: "rgba(255,255,255,0.25)" }}>/</span>
-            <span style={{ color: "#fff" }}>{days}</span>
+            <span style={{ margin: "0 12px", color: tx(0.25) }}>/</span>
+            <span style={{ color: theme.text }}>{days}</span>
             <span style={{ marginLeft: 8 }}>day{days === 1 ? "" : "s"}</span>
-            <span style={{ margin: "0 12px", color: "rgba(255,255,255,0.25)" }}>/</span>
+            <span style={{ margin: "0 12px", color: tx(0.25) }}>/</span>
             <span>15–17 May</span>
           </div>
         </div>
 
         {/* topics */}
         {topics.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 28 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 24 }}>
             {topics.map((t) => {
-              const c = pillColors(t.topic);
+              const c = pillColorsForTheme(hueFor(t.topic), theme.isDark);
               return (
-                <div
-                  key={t.topic}
-                  style={{
-                    display: "flex",
-                    fontFamily: MONO,
-                    fontSize: 16,
-                    color: c.fg,
-                    background: c.bg,
-                    border: `1px solid ${c.border}`,
-                    borderRadius: 99,
-                    padding: "6px 14px",
-                  }}
-                >
+                <div key={t.topic} style={{
+                  display: "flex", fontFamily: MONO, fontSize: 15,
+                  color: c.fg, background: c.bg, border: `1px solid ${c.border}`,
+                  borderRadius: 99, padding: "6px 14px",
+                }}>
                   {t.topic}
                 </div>
               );
@@ -236,14 +206,7 @@ export async function GET(req: Request) {
         <div style={{ flex: 1 }} />
 
         {/* 3-column day breakdown */}
-        <div
-          style={{
-            display: "flex",
-            gap: 28,
-            borderTop: "1px solid rgba(255,255,255,0.18)",
-            paddingTop: 20,
-          }}
-        >
+        <div style={{ display: "flex", gap: 28, borderTop: `1px solid ${theme.divider}`, paddingTop: 20 }}>
           {EVENT_DAYS.map((d) => {
             const daySessions = sessions
               .filter((s) => s.day === d)
@@ -253,45 +216,35 @@ export async function GET(req: Request) {
             const extra = n - 3;
             return (
               <div key={d} style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-                {/* day label + count inline */}
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                  <div style={label(10, "rgba(255,255,255,0.55)")}>{DAY_NUM[d]}</div>
-                  <div style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, color: "#fff" }}>
+                  <div style={label(10, tx(0.52))}>{DAY_NUM_OG[d]}</div>
+                  <div style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, color: theme.text }}>
                     {n}
                   </div>
                 </div>
-                {/* rule */}
-                <div style={{ height: 1, background: "rgba(255,255,255,0.15)", marginTop: 8 }} />
-                {/* sessions */}
+                <div style={{ height: 1, background: theme.divider, marginTop: 8 }} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 10 }}>
                   {shown.length === 0 ? (
-                    <div style={{ fontFamily: MONO, fontSize: 11, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: 2 }}>
+                    <div style={{ fontFamily: MONO, fontSize: 11, color: tx(0.22), textTransform: "uppercase", letterSpacing: 2 }}>
                       nothing yet
                     </div>
                   ) : (
                     shown.map((s) => (
                       <div key={s.id} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                        <span style={{ fontFamily: MONO, fontSize: 11, color: "rgba(255,255,255,0.45)", flexShrink: 0 }}>
+                        <span style={{ fontFamily: MONO, fontSize: 11, color: tx(0.42), flexShrink: 0 }}>
                           {formatTime(s.startsAt)}
                         </span>
-                        <span
-                          style={{
-                            fontFamily: SERIF,
-                            fontSize: 14,
-                            lineHeight: 1.25,
-                            color: "rgba(255,255,255,0.85)",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
+                        <span style={{
+                          fontFamily: SERIF, fontSize: 14, lineHeight: 1.25, color: tx(0.85),
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>
                           {s.title === "TBA" ? "To be announced" : s.title}
                         </span>
                       </div>
                     ))
                   )}
                   {extra > 0 && (
-                    <div style={{ fontFamily: MONO, fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 1.5 }}>
+                    <div style={{ fontFamily: MONO, fontSize: 10, color: tx(0.32), textTransform: "uppercase", letterSpacing: 1.5 }}>
                       +{extra} more
                     </div>
                   )}
@@ -302,18 +255,12 @@ export async function GET(req: Request) {
         </div>
 
         {/* footer */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: 22,
-            fontFamily: MONO,
-            fontSize: 13,
-            color: "rgba(255,255,255,0.35)",
-          }}
-        >
-          <span>plan yours · aie-agenda</span>
-          <span style={{ color: "rgba(255,255,255,0.55)" }}>ai.engineer/singapore</span>
+        <div style={{
+          display: "flex", justifyContent: "space-between", marginTop: 18,
+          fontFamily: MONO, fontSize: 12, color: tx(0.42),
+        }}>
+          <span>{x ? `@${x}` : "plan yours · aie-agenda"}</span>
+          <span style={{ color: tx(0.62) }}>ai.engineer/singapore</span>
         </div>
       </div>
     </div>
