@@ -203,14 +203,16 @@ export default function Planner({
         </div>
 
         {/* right: preview + name + cta */}
-        <aside className="order-1 lg:order-2 lg:sticky lg:top-6 lg:self-start">
+        <aside className="order-1 mx-auto w-full max-w-sm lg:order-2 lg:mx-0 lg:max-w-none lg:sticky lg:top-6 lg:self-start">
           <div className="rounded-2xl border border-line-strong bg-surface-1 p-4 sm:p-5">
-            <div className="label text-[10px] text-ink-faint">Your shareable card</div>
-            <div className="mt-3 overflow-hidden rounded-lg shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
-              <HeroCard name={cleanName} sessions={selected} footer="ai.engineer/singapore" xHandle={cleanX} linkedin={cleanLinkedIn} />
+            <div className="hidden lg:block">
+              <div className="label text-[10px] text-ink-faint">Your shareable card</div>
+              <div className="mt-3 overflow-hidden rounded-lg shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
+                <HeroCard name={cleanName} sessions={selected} footer="ai.engineer/singapore" xHandle={cleanX} linkedin={cleanLinkedIn} />
+              </div>
             </div>
 
-            <label className="mt-4 block">
+            <label className="block lg:mt-4">
               <span className="label text-[10px] text-ink-faint">Your name or handle</span>
               <input
                 value={name}

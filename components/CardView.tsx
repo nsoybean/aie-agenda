@@ -83,7 +83,7 @@ export default function CardView({
       </div>
 
       {/* theme selector + share bar */}
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+      <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <ThemeSelector current={theme} onChange={handleThemeChange} />
         <ShareBar name={name} sessions={sessions} cardNodeId={CARD_ID} />
       </div>

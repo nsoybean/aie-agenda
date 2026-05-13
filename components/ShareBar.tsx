@@ -105,34 +105,36 @@ export default function ShareBar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        onClick={shareX}
-        disabled={busy === "x"}
-        className="rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
-        {busy === "x" ? "Preparing…" : "Share on X"}
-      </button>
-      <button
-        type="button"
-        onClick={copyLink}
-        className="rounded-full border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-white/[0.06]"
-      >
-        {copied ? "Link copied ✓" : "Copy link"}
-      </button>
+    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={shareX}
+          disabled={busy === "x"}
+          className="flex-1 rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-50 sm:flex-none"
+        >
+          {busy === "x" ? "Preparing…" : "Share on X"}
+        </button>
+        <button
+          type="button"
+          onClick={copyLink}
+          className="flex-1 rounded-full border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-white/[0.06] sm:flex-none"
+        >
+          {copied ? "Link copied ✓" : "Copy link"}
+        </button>
+      </div>
       <button
         type="button"
         onClick={downloadPng}
         disabled={busy === "png"}
-        className="rounded-full border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-white/[0.06] disabled:opacity-50"
+        className="rounded-full border border-line px-4 py-2 text-center text-sm text-ink transition-colors hover:bg-white/[0.06] disabled:opacity-50"
       >
         {busy === "png" ? "Rendering…" : "Download card (PNG)"}
       </button>
       <button
         type="button"
         onClick={downloadIcs}
-        className="rounded-full border border-line px-4 py-2 text-sm text-ink transition-colors hover:bg-white/[0.06]"
+        className="rounded-full border border-line px-4 py-2 text-center text-sm text-ink transition-colors hover:bg-white/[0.06]"
       >
         Add all to calendar (.ics)
       </button>
