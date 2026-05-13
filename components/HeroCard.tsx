@@ -51,7 +51,7 @@ export default function HeroCard({
 
   return (
     <div
-      className={`@container relative aspect-[1200/630] w-full overflow-hidden rounded-[1.4cqw] ${className}`}
+      className={`@container relative aspect-[1200/630] w-full overflow-hidden rounded-[0.7cqw] ${className}`}
       style={{ background: theme.bg, fontFamily: "var(--font-body-sans)", color: theme.text }}
     >
       {/* aurora glows */}
@@ -90,7 +90,7 @@ export default function HeroCard({
 
       {/* hairline frame */}
       <div
-        className="absolute inset-[1.6cqw] rounded-[1.1cqw]"
+        className="absolute inset-[1.6cqw] rounded-[0.5cqw]"
         style={{ border: `1px solid ${theme.frameBorder}` }}
         aria-hidden
       />

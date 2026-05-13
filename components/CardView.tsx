@@ -67,7 +67,7 @@ export default function CardView({
 
       {/* the card */}
       <div className="mx-auto max-w-2xl">
-        <div id={CARD_ID} className="overflow-hidden rounded-2xl shadow-[0_20px_70px_rgba(0,0,0,0.6)]">
+        <div id={CARD_ID} className="overflow-hidden rounded-lg shadow-[0_20px_70px_rgba(0,0,0,0.6)]">
           <HeroCard
             name={name}
             sessions={sessions}

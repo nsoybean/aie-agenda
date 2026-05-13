@@ -130,7 +130,7 @@ export async function GET(req: Request) {
       {/* hairline frame */}
       <div style={{
         position: "absolute", top: 26, left: 26, right: 26, bottom: 26,
-        border: `1px solid ${theme.frameBorder}`, borderRadius: 18,
+        border: `1px solid ${theme.frameBorder}`, borderRadius: 8,
       }} />
 
       {/* content */}

@@ -205,7 +205,7 @@ export default function Planner({
         <aside className="order-1 lg:order-2 lg:sticky lg:top-6 lg:self-start">
           <div className="rounded-2xl border border-line-strong bg-surface-1 p-4 sm:p-5">
             <div className="label text-[10px] text-ink-faint">Your shareable card</div>
-            <div className="mt-3 overflow-hidden rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
+            <div className="mt-3 overflow-hidden rounded-lg shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
               <HeroCard name={cleanName} sessions={selected} footer="ai.engineer/singapore" xHandle={cleanX} linkedin={cleanLinkedIn} />
             </div>
 
