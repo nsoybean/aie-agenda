@@ -17,12 +17,21 @@ export function getSpeakerImageCandidates(
   const candidates: string[] = [];
 
   const fullSlug = toSlug(name);
-  const firstName = fullSlug.split("-")[0];
+  const parts = fullSlug.split("-");
+  const firstName = parts[0];
+  // e.g. "Jack Min Ong" → "jackmin" (first + second word concatenated, no hyphen)
+  const firstTwo = parts.length >= 2 ? parts[0] + parts[1] : null;
 
   if (fullSlug) candidates.push(`${BASE}/${fullSlug}.jpg`);
   if (fullSlug) candidates.push(`${BASE}/${fullSlug}.jpeg`);
   if (fullSlug) candidates.push(`${BASE}/${fullSlug}.png`);
   if (fullSlug) candidates.push(`${BASE}/${fullSlug}.webp`);
+  if (firstTwo && firstTwo !== fullSlug) {
+    candidates.push(`${BASE}/${firstTwo}.jpg`);
+    candidates.push(`${BASE}/${firstTwo}.jpeg`);
+    candidates.push(`${BASE}/${firstTwo}.png`);
+    candidates.push(`${BASE}/${firstTwo}.webp`);
+  }
   if (firstName && firstName !== fullSlug) {
     candidates.push(`${BASE}/${firstName}.jpg`);
     candidates.push(`${BASE}/${firstName}.jpeg`);
