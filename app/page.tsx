@@ -12,9 +12,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
   const schedule = await getSchedule();
   const sessions = selectableSessions(schedule);
   const validIds = new Set(sessions.map((s) => s.id));
-  const topTopics = aggregateTopics(sessions)
-    .slice(0, 8)
-    .map((t) => t.topic);
+  const topTopics = aggregateTopics(sessions).slice(0, 8);
 
   return (
     <Planner

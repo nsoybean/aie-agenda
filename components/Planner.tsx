@@ -10,10 +10,10 @@ import {
   groupByDay,
   speakerLine,
 } from "@/lib/api";
-import { pillColors } from "@/lib/theme";
+import { accentFor, pillColors } from "@/lib/theme";
 import { cardPath, plannerPath, sanitizeName } from "@/lib/state";
 import { EVENT_NAME } from "@/lib/site";
-import type { Session, SessionFormat } from "@/lib/types";
+import type { Session, SessionFormat, TopicCount } from "@/lib/types";
 import HeroCard from "./HeroCard";
 import SessionDetailPanel from "./SessionDetailPanel";
 
@@ -33,7 +33,7 @@ export default function Planner({
   initialIds,
 }: {
   sessions: Session[];
-  topics: string[];
+  topics: TopicCount[];
   initialName: string;
   initialIds: string[];
 }) {
@@ -83,7 +83,7 @@ export default function Planner({
     () =>
       sessions.filter((s) => {
         if (format !== "all" && s.format !== format) return false;
-        if (topic && !(s.topics ?? []).some((t) => t.toLowerCase() === topic.toLowerCase()))
+        if (topic && !(s.topics ?? []).some((t) => t.trim().toLowerCase() === topic.trim().toLowerCase()))
           return false;
         if (ql) {
           const hay = (
@@ -138,12 +138,13 @@ export default function Planner({
                 <Chip active={topic === null} onClick={() => setTopic(null)}>
                   any topic
                 </Chip>
-                {topics.map((t) => (
+                {topics.map(({ topic: t, count }) => (
                   <Chip
                     key={t}
                     active={topic === t}
                     onClick={() => setTopic(topic === t ? null : t)}
                     tint={t}
+                    count={count}
                   >
                     {t}
                   </Chip>
@@ -191,7 +192,7 @@ export default function Planner({
 
         {/* right: preview + name + cta */}
         <aside className="order-1 lg:order-2 lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-2xl border border-line bg-surface-1 p-4 sm:p-5">
+          <div className="rounded-2xl border border-line-strong bg-surface-1 p-4 sm:p-5">
             <div className="label text-[10px] text-ink-faint">Your shareable card</div>
             <div className="mt-3 overflow-hidden rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
               <HeroCard name={cleanName} sessions={selected} footer="ai.engineer/singapore" />
@@ -268,25 +269,39 @@ function Chip({
   onClick,
   children,
   tint,
+  count,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
   tint?: string;
+  count?: number;
 }) {
   const c = tint ? pillColors(tint) : null;
+  const dot = tint ? accentFor(tint) : null;
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-3 py-1 font-mono text-xs lowercase tracking-tight transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs lowercase tracking-tight transition-colors ${
         active
           ? "border-transparent bg-white text-black"
           : "border-line text-ink-dim hover:border-line-strong hover:text-ink"
       }`}
       style={!active && c ? { color: c.fg, borderColor: c.border } : undefined}
     >
+      {dot && !active && (
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ background: dot }}
+        />
+      )}
       {children}
+      {count != null && (
+        <span className={active ? "text-black/50" : "text-ink-faint"}>
+          {count}
+        </span>
+      )}
     </button>
   );
 }

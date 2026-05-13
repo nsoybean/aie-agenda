@@ -23,11 +23,48 @@ export const SELECTABLE_FORMATS: SessionFormat[] = ["talk", "workshop", "leaders
 
 export async function getSchedule(): Promise<ScheduleResponse> {
   const res = await fetch(`${API_BASE}/schedule`, {
-    next: { revalidate: 1800 },
+    next: { revalidate: 3600 }, // 1 hour — schedule is mostly locked pre-event
   });
   if (!res.ok) throw new Error(`Schedule fetch failed: ${res.status}`);
   const data = (await res.json()) as ScheduleResponse;
-  return data;
+  return enrichSchedule(data);
+}
+
+/**
+ * The API embeds speaker data per-session, but different source scrapers
+ * include different fields (e.g. leadership-track-planner strips bio/title).
+ * Scan all sessions, keep the richest record per speaker name, and backfill
+ * null fields on every session so every panel shows full details.
+ */
+function enrichSchedule(schedule: ScheduleResponse): ScheduleResponse {
+  type SP = ScheduleResponse["sessions"][number]["speakers"][number];
+  const richness = (sp: SP) =>
+    (sp.bio ? 4 : 0) + (sp.title ? 2 : 0) + (sp.imageUrl ? 1 : 0) + (sp.company ? 1 : 0);
+
+  const best = new Map<string, SP>();
+  for (const s of schedule.sessions) {
+    for (const sp of s.speakers ?? []) {
+      const existing = best.get(sp.name);
+      if (!existing || richness(sp) > richness(existing)) best.set(sp.name, sp);
+    }
+  }
+
+  return {
+    ...schedule,
+    sessions: schedule.sessions.map((s) => ({
+      ...s,
+      speakers: (s.speakers ?? []).map((sp) => {
+        const r = best.get(sp.name);
+        return {
+          ...sp,
+          title: sp.title ?? r?.title ?? null,
+          bio: sp.bio ?? r?.bio ?? null,
+          imageUrl: sp.imageUrl ?? r?.imageUrl ?? null,
+          company: sp.company ?? r?.company ?? null,
+        };
+      }),
+    })),
+  };
 }
 
 /** All sessions a user is allowed to pick (drops breaks), sorted by start time. */
@@ -53,14 +90,23 @@ export function resolveSessions(schedule: ScheduleResponse, ids: string[]): Sess
   return out.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 }
 
+// Tags that duplicate format/venue/track fields — not useful as content filters.
+const SKIP_TOPICS = new Set([
+  "break",
+  "tba",
+  "main stage",
+  "workshop",
+  "leadership",
+  "keynote", // already surfaced via format/track context
+]);
+
 export function aggregateTopics(sessions: Session[]): TopicCount[] {
   const counts = new Map<string, number>();
   for (const s of sessions) {
     for (const t of s.topics ?? []) {
-      // skip structural / non-informative tags
-      const norm = t.trim();
-      if (!norm || norm.toLowerCase() === "break" || norm.toLowerCase() === "tba") continue;
-      counts.set(norm, (counts.get(norm) ?? 0) + 1);
+      const norm = t.trim().toLowerCase();
+      if (!norm || SKIP_TOPICS.has(norm)) continue;
+      counts.set(t.trim(), (counts.get(t.trim()) ?? 0) + 1);
     }
   }
   return [...counts.entries()]

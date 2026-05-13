@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { DAY_LABEL, formatTimeRange, googleCalUrl } from "@/lib/api";
 import { FORMAT_LABEL, pillColors } from "@/lib/theme";
 import type { Session } from "@/lib/types";
+import SpeakerAvatar from "./SpeakerAvatar";
 import TopicPill from "./TopicPill";
 
 export default function SessionDetailPanel({
@@ -107,16 +108,7 @@ export default function SessionDetailPanel({
               </div>
               {s.speakers.map((sp, i) => (
                 <div key={i} className="flex gap-3">
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                    style={{
-                      background: pillColors(sp.name).bg,
-                      border: `1px solid ${pillColors(sp.name).border}`,
-                      color: pillColors(sp.name).fg,
-                    }}
-                  >
-                    {initials(sp.name)}
-                  </span>
+                  <SpeakerAvatar name={sp.name} apiImageUrl={sp.imageUrl} size={40} />
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-ink">{sp.name}</div>
                     {(sp.title || sp.company) && (
