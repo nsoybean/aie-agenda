@@ -1,4 +1,5 @@
 const BASE = "https://www.ai.engineer/singapore/speakers";
+const TEAM_BASE = "https://www.ai.engineer/singapore/team";
 
 /**
  * Generate URL candidates for a speaker's headshot, in priority order.
@@ -37,6 +38,19 @@ export function getSpeakerImageCandidates(
     candidates.push(`${BASE}/${firstName}.jpeg`);
     candidates.push(`${BASE}/${firstName}.png`);
     candidates.push(`${BASE}/${firstName}.webp`);
+  }
+  // fallback: some team members have images under /team/ instead of /speakers/
+  if (fullSlug) candidates.push(`${TEAM_BASE}/${fullSlug}.jpg`);
+  if (fullSlug) candidates.push(`${TEAM_BASE}/${fullSlug}.jpeg`);
+  if (fullSlug) candidates.push(`${TEAM_BASE}/${fullSlug}.png`);
+  if (fullSlug) candidates.push(`${TEAM_BASE}/${fullSlug}.webp`);
+  if (firstTwo && firstTwo !== fullSlug) {
+    candidates.push(`${TEAM_BASE}/${firstTwo}.jpg`);
+    candidates.push(`${TEAM_BASE}/${firstTwo}.jpeg`);
+  }
+  if (firstName && firstName !== fullSlug) {
+    candidates.push(`${TEAM_BASE}/${firstName}.jpg`);
+    candidates.push(`${TEAM_BASE}/${firstName}.jpeg`);
   }
   if (apiImageUrl) candidates.push(apiImageUrl);
 
