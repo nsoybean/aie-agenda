@@ -135,7 +135,7 @@ export default function ShareBar({
           onClick={onOpenScanView}
           className="rounded-full border border-line px-4 py-2 text-center text-sm text-ink transition-colors hover:bg-white/[0.06]"
         >
-          Open scan view
+          Present card
         </button>
       )}
       <button
