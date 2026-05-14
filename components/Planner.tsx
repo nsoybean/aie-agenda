@@ -171,7 +171,7 @@ export default function Planner({
                       ? "border-transparent bg-white text-black"
                       : "border-line text-ink-dim hover:border-line-strong hover:text-ink"
                   }`}
-                  title="Toggle topic cluster graph"
+                  title="Toggle word cloud"
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
                     <circle cx="2" cy="6" r="1.5" fill="currentColor" />
@@ -182,7 +182,7 @@ export default function Planner({
                     <line x1="3.5" y1="6.5" x2="8" y2="9.5" stroke="currentColor" strokeWidth="1" />
                     <line x1="4" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="1" />
                   </svg>
-                  graph
+                  explore
                 </button>
               </div>
             )}
