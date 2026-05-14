@@ -16,6 +16,7 @@ import { EVENT_NAME } from "@/lib/site";
 import type { Session, SessionFormat, TopicCount } from "@/lib/types";
 import HeroCard from "./HeroCard";
 import SessionDetailPanel from "./SessionDetailPanel";
+import ContentGraph from "./ContentGraph";
 
 type FormatFilter = "all" | SessionFormat;
 
@@ -50,6 +51,7 @@ export default function Planner({
   const [topic, setTopic] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [detail, setDetail] = useState<Session | null>(null);
+  const [graphOpen, setGraphOpen] = useState(false);
 
   const allIds = useMemo(() => sessions.map((s) => s.id), [sessions]);
   const byId = useMemo(() => new Map(sessions.map((s) => [s.id, s])), [sessions]);
@@ -146,7 +148,7 @@ export default function Planner({
               ))}
             </div>
             {topics.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <Chip active={topic === null} onClick={() => setTopic(null)}>
                   any topic
                 </Chip>
@@ -161,6 +163,35 @@ export default function Planner({
                     {t}
                   </Chip>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setGraphOpen((o) => !o)}
+                  className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs lowercase tracking-tight transition-colors ${
+                    graphOpen
+                      ? "border-transparent bg-white text-black"
+                      : "border-line text-ink-dim hover:border-line-strong hover:text-ink"
+                  }`}
+                  title="Toggle topic cluster graph"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
+                    <circle cx="2" cy="6" r="1.5" fill="currentColor" />
+                    <circle cx="10" cy="2" r="1.5" fill="currentColor" />
+                    <circle cx="10" cy="10" r="1.5" fill="currentColor" />
+                    <circle cx="6" cy="6" r="2" fill="currentColor" fillOpacity="0.5" />
+                    <line x1="3.5" y1="5.5" x2="8" y2="2.5" stroke="currentColor" strokeWidth="1" />
+                    <line x1="3.5" y1="6.5" x2="8" y2="9.5" stroke="currentColor" strokeWidth="1" />
+                    <line x1="4" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="1" />
+                  </svg>
+                  graph
+                </button>
+              </div>
+            )}
+            {graphOpen && (
+              <div className="rounded-xl border border-line bg-surface-1 p-4 overflow-hidden">
+                <ContentGraph
+                  sessions={sessions}
+                  onSearch={(term) => { setQ(term); if (term) setTopic(null); }}
+                />
               </div>
             )}
             <input
