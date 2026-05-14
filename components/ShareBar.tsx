@@ -36,10 +36,12 @@ export default function ShareBar({
   name,
   sessions,
   cardNodeId,
+  onOpenScanView,
 }: {
   name: string;
   sessions: Session[];
   cardNodeId: string;
+  onOpenScanView?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState<null | "x" | "png">(null);
@@ -127,6 +129,15 @@ export default function ShareBar({
           {copied ? "Link copied ✓" : "Copy link"}
         </button>
       </div>
+      {onOpenScanView && (
+        <button
+          type="button"
+          onClick={onOpenScanView}
+          className="rounded-full border border-line px-4 py-2 text-center text-sm text-ink transition-colors hover:bg-white/[0.06]"
+        >
+          Open scan view
+        </button>
+      )}
       <button
         type="button"
         onClick={downloadPng}

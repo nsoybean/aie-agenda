@@ -91,19 +91,12 @@ export default function CardView({
             cardUrl={cardUrl || undefined}
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setScanOpen(true)}
-          className="mt-3 w-full rounded-full border border-line px-4 py-2.5 text-center font-mono text-xs lowercase tracking-tight text-ink transition-colors hover:bg-white/[0.06]"
-        >
-          full-screen scan card
-        </button>
       </div>
 
       {/* theme selector + share bar */}
       <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <ThemeSelector current={theme} onChange={handleThemeChange} />
-        <ShareBar name={name} sessions={sessions} cardNodeId={CARD_ID} />
+        <ShareBar name={name} sessions={sessions} cardNodeId={CARD_ID} onOpenScanView={() => setScanOpen(true)} />
       </div>
 
       {nClashes > 0 && (
