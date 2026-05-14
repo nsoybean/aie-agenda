@@ -17,6 +17,7 @@ import type { Session, SessionFormat, TopicCount } from "@/lib/types";
 import HeroCard from "./HeroCard";
 import SessionDetailPanel from "./SessionDetailPanel";
 import ContentGraph from "./ContentGraph";
+import TimelineView from "./TimelineView";
 
 type FormatFilter = "all" | SessionFormat;
 
@@ -52,6 +53,7 @@ export default function Planner({
   const [q, setQ] = useState("");
   const [detail, setDetail] = useState<Session | null>(null);
   const [graphOpen, setGraphOpen] = useState(false);
+  const [view, setView] = useState<"list" | "timeline">("list");
 
   const allIds = useMemo(() => sessions.map((s) => s.id), [sessions]);
   const byId = useMemo(() => new Map(sessions.map((s) => [s.id, s])), [sessions]);
@@ -163,27 +165,52 @@ export default function Planner({
                     {t}
                   </Chip>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => setGraphOpen((o) => !o)}
-                  className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs lowercase tracking-tight transition-colors ${
-                    graphOpen
-                      ? "border-transparent bg-white text-black"
-                      : "border-line text-ink-dim hover:border-line-strong hover:text-ink"
-                  }`}
-                  title="Toggle word cloud"
-                >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
-                    <circle cx="2" cy="6" r="1.5" fill="currentColor" />
-                    <circle cx="10" cy="2" r="1.5" fill="currentColor" />
-                    <circle cx="10" cy="10" r="1.5" fill="currentColor" />
-                    <circle cx="6" cy="6" r="2" fill="currentColor" fillOpacity="0.5" />
-                    <line x1="3.5" y1="5.5" x2="8" y2="2.5" stroke="currentColor" strokeWidth="1" />
-                    <line x1="3.5" y1="6.5" x2="8" y2="9.5" stroke="currentColor" strokeWidth="1" />
-                    <line x1="4" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="1" />
-                  </svg>
-                  explore
-                </button>
+                <div className="mt-2 flex w-full items-center gap-1.5 sm:mt-0 sm:ml-auto sm:w-auto">
+                  {/* view toggle */}
+                  <div className="flex items-center rounded-full border border-line p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setView("list")}
+                      className={`rounded-full px-2.5 py-0.5 font-mono text-xs lowercase tracking-tight transition-colors ${
+                        view === "list" ? "bg-white text-black" : "text-ink-dim hover:text-ink"
+                      }`}
+                      title="List view"
+                    >
+                      list
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setView("timeline")}
+                      className={`rounded-full px-2.5 py-0.5 font-mono text-xs lowercase tracking-tight transition-colors ${
+                        view === "timeline" ? "bg-white text-black" : "text-ink-dim hover:text-ink"
+                      }`}
+                      title="Timeline view"
+                    >
+                      timeline
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGraphOpen((o) => !o)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs lowercase tracking-tight transition-colors ${
+                      graphOpen
+                        ? "border-transparent bg-white text-black"
+                        : "border-line text-ink-dim hover:border-line-strong hover:text-ink"
+                    }`}
+                    title="Toggle word cloud"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
+                      <circle cx="2" cy="6" r="1.5" fill="currentColor" />
+                      <circle cx="10" cy="2" r="1.5" fill="currentColor" />
+                      <circle cx="10" cy="10" r="1.5" fill="currentColor" />
+                      <circle cx="6" cy="6" r="2" fill="currentColor" fillOpacity="0.5" />
+                      <line x1="3.5" y1="5.5" x2="8" y2="2.5" stroke="currentColor" strokeWidth="1" />
+                      <line x1="3.5" y1="6.5" x2="8" y2="9.5" stroke="currentColor" strokeWidth="1" />
+                      <line x1="4" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="1" />
+                    </svg>
+                    explore
+                  </button>
+                </div>
               </div>
             )}
             {graphOpen && (
@@ -202,34 +229,46 @@ export default function Planner({
             />
           </div>
 
-          {/* list */}
-          <div className="mt-6 space-y-8">
-            {groups.length === 0 && (
-              <p className="rounded-xl border border-line bg-surface-1 px-4 py-8 text-center text-ink-dim">
-                Nothing matches those filters.
-              </p>
+          {/* list / timeline */}
+          <div className="mt-6">
+            {view === "timeline" ? (
+              <TimelineView
+                sessions={filtered}
+                selectedIds={idSet}
+                conflictIds={conflicts}
+                onToggle={toggle}
+                onDetail={setDetail}
+              />
+            ) : (
+              <div className="space-y-8">
+                {groups.length === 0 && (
+                  <p className="rounded-xl border border-line bg-surface-1 px-4 py-8 text-center text-ink-dim">
+                    Nothing matches those filters.
+                  </p>
+                )}
+                {groups.map(({ day, sessions: daySessions }) => (
+                  <section key={day}>
+                    <div className="mb-3 flex items-center gap-3">
+                      <h3 className="label text-sm text-ink-dim">{DAY_LABEL[day]?.short ?? day}</h3>
+                      <span className="font-mono text-xs text-ink-faint">{daySessions.length}</span>
+                      <div className="h-px flex-1 bg-line" />
+                    </div>
+                    <ul className="space-y-1.5">
+                      {daySessions.map((s) => (
+                        <PlannerRow
+                          key={s.id}
+                          session={s}
+                          selected={idSet.has(s.id)}
+                          conflicting={idSet.has(s.id) && conflicts.has(s.id)}
+                          onToggle={() => toggle(s.id)}
+                          onDetail={() => setDetail(s)}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
             )}
-            {groups.map(({ day, sessions: daySessions }) => (
-              <section key={day}>
-                <div className="mb-3 flex items-center gap-3">
-                  <h3 className="label text-sm text-ink-dim">{DAY_LABEL[day]?.short ?? day}</h3>
-                  <span className="font-mono text-xs text-ink-faint">{daySessions.length}</span>
-                  <div className="h-px flex-1 bg-line" />
-                </div>
-                <ul className="space-y-1.5">
-                  {daySessions.map((s) => (
-                    <PlannerRow
-                      key={s.id}
-                      session={s}
-                      selected={idSet.has(s.id)}
-                      conflicting={idSet.has(s.id) && conflicts.has(s.id)}
-                      onToggle={() => toggle(s.id)}
-                      onDetail={() => setDetail(s)}
-                    />
-                  ))}
-                </ul>
-              </section>
-            ))}
           </div>
         </div>
 
@@ -420,8 +459,9 @@ function PlannerRow({
       >
         ✓
       </button>
-      <span className="w-[3rem] shrink-0 font-mono text-xs text-ink-dim sm:text-sm">
+      <span className="w-[5.5rem] shrink-0 font-mono text-xs text-ink-dim sm:text-sm">
         {formatTime(s.startsAt)}
+        <span className="text-ink-faint">–{formatTime(s.endsAt)}</span>
       </span>
       <button type="button" onClick={onDetail} className="min-w-0 flex-1 text-left">
         <span className="flex min-w-0 items-center gap-2">
