@@ -73,6 +73,7 @@ function DayTimeline({
   conflictIds,
   onToggle,
   onDetail,
+  readOnly = false,
 }: {
   day: string;
   sessions: Session[];
@@ -80,6 +81,7 @@ function DayTimeline({
   conflictIds: Set<string>;
   onToggle: (id: string) => void;
   onDetail: (s: Session) => void;
+  readOnly?: boolean;
 }) {
   if (sessions.length === 0) return null;
 
@@ -174,6 +176,7 @@ function DayTimeline({
                 trackColor={tc}
                 onToggle={onToggle}
                 onDetail={onDetail}
+                readOnly={readOnly}
               />
             );
           })}
@@ -194,6 +197,7 @@ function SessionBlock({
   trackColor,
   onToggle,
   onDetail,
+  readOnly,
 }: {
   session: Session;
   top: number;
@@ -205,6 +209,7 @@ function SessionBlock({
   trackColor: { bg: string; border: string; fg: string } | null;
   onToggle: (id: string) => void;
   onDetail: (s: Session) => void;
+  readOnly: boolean;
 }) {
   const colWidth = `calc((100% - ${TIME_COL_W}px - ${TIMELINE_X_INSET * 2}px - ${
     COL_GAP * (totalCols - 1)
@@ -238,27 +243,28 @@ function SessionBlock({
           : "rgba(255,255,255,0.03)",
       }}
     >
-      {/* Checkbox toggle strip */}
-      <button
-        type="button"
-        onClick={() => onToggle(s.id)}
-        aria-pressed={selected}
-        title={selected ? "Remove from agenda" : "Add to agenda"}
-        className="absolute right-1.5 top-1.5 z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[9px] transition-colors"
-        style={{
-          borderColor: selected ? "white" : "rgba(255,255,255,0.3)",
-          background: selected ? "white" : "transparent",
-          color: selected ? "black" : "transparent",
-        }}
-      >
-        ✓
-      </button>
+      {!readOnly && (
+        <button
+          type="button"
+          onClick={() => onToggle(s.id)}
+          aria-pressed={selected}
+          title={selected ? "Remove from agenda" : "Add to agenda"}
+          className="absolute right-1.5 top-1.5 z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[9px] transition-colors"
+          style={{
+            borderColor: selected ? "white" : "rgba(255,255,255,0.3)",
+            background: selected ? "white" : "transparent",
+            color: selected ? "black" : "transparent",
+          }}
+        >
+          ✓
+        </button>
+      )}
 
       {/* Main content — click to open detail */}
       <button
         type="button"
         onClick={() => onDetail(s)}
-        className="flex flex-1 flex-col overflow-hidden p-1.5 pr-6 text-left"
+        className={`flex flex-1 flex-col overflow-hidden p-1.5 text-left ${readOnly ? "pr-1.5" : "pr-6"}`}
       >
         <span
           className={`${compactMode ? "line-clamp-1" : "line-clamp-2"} text-[11px] font-medium leading-tight text-ink`}
@@ -287,12 +293,14 @@ export default function TimelineView({
   conflictIds,
   onToggle,
   onDetail,
+  readOnly = false,
 }: {
   sessions: Session[];
   selectedIds: Set<string>;
   conflictIds?: Set<string>;
   onToggle: (id: string) => void;
   onDetail: (s: Session) => void;
+  readOnly?: boolean;
 }) {
   const groups = groupByDay(sessions);
   return (
@@ -311,6 +319,7 @@ export default function TimelineView({
           conflictIds={conflictIds ?? new Set()}
           onToggle={onToggle}
           onDetail={onDetail}
+          readOnly={readOnly}
         />
       ))}
     </div>
