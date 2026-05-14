@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import QRCode from "react-qr-code";
 import { conflictIdSet } from "@/lib/api";
 import type { ThemeId } from "@/lib/themes";
-import { DEFAULT_THEME } from "@/lib/themes";
+import { DEFAULT_THEME, getTheme } from "@/lib/themes";
 import type { Session } from "@/lib/types";
 import HeroCard from "./HeroCard";
 import SessionList from "./SessionList";
@@ -188,6 +188,7 @@ export default function CardView({
           url={cardUrl || ""}
           xHandle={xHandle}
           linkedin={linkedin}
+          themeId={theme}
           onClose={() => setScanOpen(false)}
         />
       )}
@@ -202,36 +203,77 @@ function ScanCardOverlay({
   url,
   xHandle,
   linkedin,
+  themeId,
   onClose,
 }: {
   name: string;
   url: string;
   xHandle?: string;
   linkedin?: string;
+  themeId: ThemeId;
   onClose: () => void;
 }) {
   const displayName = name.trim() || "My AI Engineer agenda";
+  const theme = getTheme(themeId);
+  const tx = theme.textAt;
+  const qrFrame = theme.isDark ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.96)";
+  const qrShadow = theme.isDark ? "0 24px 90px rgba(255,255,255,0.14)" : "0 24px 90px rgba(0,0,0,0.18)";
 
   return (
-    <div className="fixed inset-0 z-50 flex min-h-dvh flex-col bg-black px-5 py-5 text-ink sm:px-8">
+    <div
+      className="fixed inset-0 z-50 flex min-h-dvh flex-col overflow-hidden px-5 py-5 sm:px-8"
+      style={{ background: theme.bg, color: theme.text }}
+    >
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        {theme.glows.map((g, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              top: g.top,
+              bottom: g.bottom,
+              left: g.left,
+              right: g.right,
+              width: g.w,
+              height: g.h,
+              filter: "blur(60px)",
+              background: `radial-gradient(closest-side, ${g.color}, transparent)`,
+            }}
+          />
+        ))}
+        {theme.vignette && <div className="absolute inset-0" style={{ background: theme.vignette }} />}
+        <div className="grain-overlay absolute inset-0 mix-blend-soft-light opacity-25" />
+      </div>
+
+      <div
+        className="pointer-events-none absolute inset-4 rounded-2xl"
+        style={{ border: `1px solid ${theme.frameBorder}` }}
+        aria-hidden
+      />
+
       <div className="flex items-center justify-between gap-4">
-        <div className="label text-[10px] text-ink-faint">scan agenda card</div>
+        <div className="relative label text-[10px]" style={{ color: tx(0.55) }}>scan agenda card</div>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full border border-line px-3 py-1.5 font-mono text-xs lowercase text-ink-dim transition-colors hover:border-line-strong hover:text-ink"
+          className="relative rounded-full px-3 py-1.5 font-mono text-xs lowercase transition-colors"
+          style={{ border: `1px solid ${theme.frameBorder}`, color: tx(0.72), background: tx(0.08) }}
         >
           close
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-7 text-center">
+      <div className="relative flex flex-1 flex-col items-center justify-center gap-7 text-center">
         <div>
-          <div className="serif text-4xl font-semibold leading-tight text-ink sm:text-6xl">{displayName}</div>
-          <div className="label mt-3 text-[11px] text-ink-faint">AI Engineer Singapore · 2026</div>
+          <div className="serif text-4xl font-semibold leading-tight sm:text-6xl" style={{ color: theme.text }}>
+            {displayName}
+          </div>
+          <div className="label mt-3 text-[11px]" style={{ color: tx(0.58) }}>
+            AI Engineer Singapore · 2026
+          </div>
         </div>
 
-        <div className="w-full max-w-[min(82vw,420px)] rounded-2xl bg-white p-5 shadow-[0_24px_90px_rgba(255,255,255,0.14)]">
+        <div className="w-full max-w-[min(82vw,420px)] rounded-2xl p-5" style={{ background: qrFrame, boxShadow: qrShadow }}>
           {url ? (
             <QRCode value={url} size={420} className="h-auto w-full" fgColor="#000000" bgColor="#ffffff" level="M" />
           ) : (
@@ -242,13 +284,13 @@ function ScanCardOverlay({
         {(xHandle || linkedin) && (
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             {xHandle && (
-              <span className="flex items-center gap-1.5 font-mono text-base text-ink">
+              <span className="flex items-center gap-1.5 font-mono text-base" style={{ color: tx(0.78) }}>
                 <XIcon className="h-4 w-4 shrink-0" />
                 @{xHandle}
               </span>
             )}
             {linkedin && (
-              <span className="flex items-center gap-1.5 font-mono text-base text-ink">
+              <span className="flex items-center gap-1.5 font-mono text-base" style={{ color: tx(0.78) }}>
                 <LinkedInIcon className="h-4 w-4 shrink-0" />
                 {linkedin}
               </span>
