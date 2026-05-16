@@ -1,6 +1,7 @@
 "use client";
 
-import { DAY_LABEL, groupByDay, speakerLine } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { DAY_LABEL, EVENT_DAYS, groupByDay, speakerLine } from "@/lib/api";
 import { pillColors } from "@/lib/theme";
 import type { Session } from "@/lib/types";
 
@@ -18,6 +19,14 @@ type TimelineTick = {
   label: boolean;
   strength: "major" | "minor" | "event";
 };
+
+/** Current date + minutes-since-midnight in SGT (UTC+8). */
+function getNowSGT(): { date: string; minutes: number } {
+  const sgtMs = Date.now() + 8 * 60 * 60 * 1000;
+  const d = new Date(sgtMs);
+  const date = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  return { date, minutes: d.getUTCHours() * 60 + d.getUTCMinutes() };
+}
 
 /** Convert an ISO time to minutes since midnight (SGT). */
 function toMinutes(iso: string): number {
@@ -74,6 +83,10 @@ function DayTimeline({
   onToggle,
   onDetail,
   readOnly = false,
+  nowMinutes,
+  isPastDay,
+  collapsed,
+  onToggleCollapse,
 }: {
   day: string;
   sessions: Session[];
@@ -82,8 +95,30 @@ function DayTimeline({
   onToggle: (id: string) => void;
   onDetail: (s: Session) => void;
   readOnly?: boolean;
+  /** Minutes since midnight SGT — only provided when this day is today. */
+  nowMinutes?: number;
+  isPastDay?: boolean;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }) {
   if (sessions.length === 0) return null;
+
+  if (collapsed) {
+    return (
+      <section>
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="mb-3 flex w-full items-center gap-3 opacity-50 transition-opacity hover:opacity-70"
+        >
+          <h3 className="label text-sm text-ink-dim">{DAY_LABEL[day]?.short ?? day}</h3>
+          <span className="font-mono text-xs text-ink-faint">{sessions.length}</span>
+          <div className="h-px flex-1 bg-line" />
+          <span className="font-mono text-[10px] text-ink-faint">expand ▼</span>
+        </button>
+      </section>
+    );
+  }
 
   const starts = sessions.map((s) => toMinutes(s.startsAt));
   const ends = sessions.map((s) => toMinutes(s.endsAt));
@@ -97,6 +132,9 @@ function DayTimeline({
   const gutterStart = Math.floor(minMin / 30) * 30;
   const gutterEnd = Math.ceil(maxMin / 30) * 30;
   const totalHeight = (gutterEnd - gutterStart) * pxPerMin;
+
+  const nowInRange = nowMinutes !== undefined && nowMinutes >= gutterStart && nowMinutes <= gutterEnd;
+  const nowTop = nowInRange ? (nowMinutes - gutterStart) * pxPerMin + TIMELINE_Y_INSET : 0;
 
   const sessionBoundaries = new Set([...starts, ...ends]);
   const tickMinutes = new Set<number>();
@@ -121,6 +159,13 @@ function DayTimeline({
         <h3 className="label text-sm text-ink-dim">{DAY_LABEL[day]?.short ?? day}</h3>
         <span className="font-mono text-xs text-ink-faint">{sessions.length}</span>
         <div className="h-px flex-1 bg-line" />
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="font-mono text-[10px] text-ink-faint transition-colors hover:text-ink-dim"
+        >
+          {isPastDay ? "collapse ▲" : "hide ▲"}
+        </button>
       </div>
 
       <div className="relative overflow-x-auto overflow-y-clip rounded-xl border border-line bg-surface-1">
@@ -154,6 +199,27 @@ function DayTimeline({
             );
           })}
 
+          {/* Current time indicator */}
+          {nowInRange && (
+            <div
+              className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
+              style={{ top: nowTop }}
+            >
+              <div className="shrink-0" style={{ width: TIME_COL_W - 4 }} />
+              <div
+                className="shrink-0 rounded-full bg-red-500"
+                style={{ width: 8, height: 8, marginTop: -1 }}
+              />
+              <div
+                className="flex-1"
+                style={{
+                  marginRight: TIMELINE_X_INSET,
+                  borderTop: "1.5px solid rgba(239,68,68,0.6)",
+                }}
+              />
+            </div>
+          )}
+
           {/* Session blocks */}
           {assigned.map(({ session: s, col, totalCols }) => {
             const top = (toMinutes(s.startsAt) - gutterStart) * pxPerMin + TIMELINE_Y_INSET;
@@ -162,6 +228,8 @@ function DayTimeline({
             const tc = track ? pillColors(track) : null;
             const isSel = selectedIds.has(s.id);
             const isConflict = conflictIds.has(s.id);
+            // A session is over when the current time is strictly past its end time
+            const isOver = nowMinutes !== undefined && nowMinutes > toMinutes(s.endsAt);
 
             return (
               <SessionBlock
@@ -177,6 +245,7 @@ function DayTimeline({
                 onToggle={onToggle}
                 onDetail={onDetail}
                 readOnly={readOnly}
+                dim={isOver}
               />
             );
           })}
@@ -198,6 +267,7 @@ function SessionBlock({
   onToggle,
   onDetail,
   readOnly,
+  dim,
 }: {
   session: Session;
   top: number;
@@ -210,6 +280,7 @@ function SessionBlock({
   onToggle: (id: string) => void;
   onDetail: (s: Session) => void;
   readOnly: boolean;
+  dim?: boolean;
 }) {
   const colWidth = `calc((100% - ${TIME_COL_W}px - ${TIMELINE_X_INSET * 2}px - ${
     COL_GAP * (totalCols - 1)
@@ -223,12 +294,13 @@ function SessionBlock({
 
   return (
     <div
-      className="absolute flex flex-col overflow-hidden rounded-lg border transition-colors"
+      className="absolute flex flex-col overflow-hidden rounded-lg border transition-all"
       style={{
         top,
         height,
         width: colWidth,
         left,
+        opacity: dim ? 0.4 : 1,
         borderColor: conflicting
           ? "rgba(252,211,77,0.5)"
           : selected
@@ -302,6 +374,27 @@ export default function TimelineView({
   onDetail: (s: Session) => void;
   readOnly?: boolean;
 }) {
+  const [now, setNow] = useState<{ date: string; minutes: number } | null>(null);
+  const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const n = getNowSGT();
+    setNow(n);
+    // Past days start collapsed; user can expand them
+    setCollapsedDays(new Set(EVENT_DAYS.filter((d) => d < n.date)));
+    const id = setInterval(() => setNow(getNowSGT()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  function toggleDay(day: string) {
+    setCollapsedDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(day)) next.delete(day);
+      else next.add(day);
+      return next;
+    });
+  }
+
   const groups = groupByDay(sessions);
   return (
     <div className="space-y-8">
@@ -320,6 +413,10 @@ export default function TimelineView({
           onToggle={onToggle}
           onDetail={onDetail}
           readOnly={readOnly}
+          nowMinutes={now?.date === day ? now.minutes : undefined}
+          isPastDay={now ? day < now.date : false}
+          collapsed={collapsedDays.has(day)}
+          onToggleCollapse={() => toggleDay(day)}
         />
       ))}
     </div>
