@@ -1,8 +1,18 @@
 "use client";
 
-import { DAY_LABEL, formatTime, groupByDay, speakerLine } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { DAY_LABEL, EVENT_DAYS, formatTime, groupByDay, speakerLine } from "@/lib/api";
 import { pillColors } from "@/lib/theme";
 import type { Session } from "@/lib/types";
+
+/** Current date + epoch-ms timestamp in SGT (UTC+8). */
+function getNowSGT(): { date: string; nowMs: number } {
+  const nowMs = Date.now();
+  const sgtMs = nowMs + 8 * 60 * 60 * 1000;
+  const d = new Date(sgtMs);
+  const date = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  return { date, nowMs };
+}
 
 export default function SessionList({
   sessions,
@@ -15,31 +25,114 @@ export default function SessionList({
   onSelect?: (s: Session) => void;
   selectedId?: string | null;
 }) {
+  const [now, setNow] = useState<{ date: string; nowMs: number } | null>(null);
+  const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
+  const [showPastForToday, setShowPastForToday] = useState(false);
+
+  useEffect(() => {
+    const n = getNowSGT();
+    setNow(n);
+    // Past days start collapsed
+    setCollapsedDays(new Set(EVENT_DAYS.filter((d) => d < n.date)));
+    const id = setInterval(() => setNow(getNowSGT()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  function toggleDay(day: string) {
+    setCollapsedDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(day)) next.delete(day);
+      else next.add(day);
+      return next;
+    });
+  }
+
   const groups = groupByDay(sessions);
+
   return (
     <div className="space-y-8">
-      {groups.map(({ day, sessions: daySessions }) => (
-        <section key={day}>
-          <div className="mb-3 flex items-center gap-3">
-            <h3 className="font-mono text-sm tracking-[0.22em] text-ink-dim">
-              {DAY_LABEL[day]?.short ?? day}
-            </h3>
-            <span className="font-mono text-xs text-ink-faint">{daySessions.length}</span>
-            <div className="h-px flex-1 bg-line" />
-          </div>
-          <ul className="space-y-1.5">
-            {daySessions.map((s) => (
-              <SessionRow
-                key={s.id}
-                session={s}
-                conflicting={conflictIds?.has(s.id) ?? false}
-                active={selectedId === s.id}
-                onClick={onSelect ? () => onSelect(s) : undefined}
-              />
-            ))}
-          </ul>
-        </section>
-      ))}
+      {groups.map(({ day, sessions: daySessions }) => {
+        const isPastDay = now ? day < now.date : false;
+        const isToday = now ? day === now.date : false;
+        const isCollapsed = collapsedDays.has(day);
+
+        // Split today's sessions: over = current time strictly past session end time
+        let pastSessions: Session[] = [];
+        let upcomingSessions: Session[] = daySessions;
+        if (isToday && now) {
+          pastSessions = daySessions.filter((s) => new Date(s.endsAt).getTime() < now.nowMs);
+          upcomingSessions = daySessions.filter((s) => new Date(s.endsAt).getTime() >= now.nowMs);
+        }
+
+        const showDayToggle = isPastDay || isToday;
+
+        return (
+          <section key={day}>
+            <div className={`mb-3 flex items-center gap-3 ${isCollapsed ? "opacity-50" : ""}`}>
+              <h3 className="font-mono text-sm tracking-[0.22em] text-ink-dim">
+                {DAY_LABEL[day]?.short ?? day}
+              </h3>
+              <span className="font-mono text-xs text-ink-faint">{daySessions.length}</span>
+              <div className="h-px flex-1 bg-line" />
+              {showDayToggle && (
+                <button
+                  type="button"
+                  onClick={() => toggleDay(day)}
+                  className="font-mono text-[10px] text-ink-faint transition-colors hover:text-ink-dim"
+                >
+                  {isCollapsed ? "show ▼" : "hide ▲"}
+                </button>
+              )}
+            </div>
+
+            {!isCollapsed && (
+              <>
+                {isToday && pastSessions.length > 0 && (
+                  <>
+                    {showPastForToday && (
+                      <ul className="mb-2 space-y-1.5 opacity-45">
+                        {pastSessions.map((s) => (
+                          <SessionRow
+                            key={s.id}
+                            session={s}
+                            conflicting={conflictIds?.has(s.id) ?? false}
+                            active={selectedId === s.id}
+                            onClick={onSelect ? () => onSelect(s) : undefined}
+                          />
+                        ))}
+                      </ul>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowPastForToday((p) => !p)}
+                      className="group mb-4 flex w-full items-center gap-3 py-1 text-ink-faint transition-colors hover:text-ink-dim"
+                    >
+                      <div className="h-px flex-1 bg-line transition-colors group-hover:bg-line-strong" />
+                      <span className="font-mono text-[10px] tracking-wide">
+                        {showPastForToday
+                          ? "▲ hide past sessions"
+                          : `← ${pastSessions.length} past session${pastSessions.length !== 1 ? "s" : ""} →`}
+                      </span>
+                      <div className="h-px flex-1 bg-line transition-colors group-hover:bg-line-strong" />
+                    </button>
+                  </>
+                )}
+                <ul className="space-y-1.5">
+                  {(isToday ? upcomingSessions : daySessions).map((s) => (
+                    <SessionRow
+                      key={s.id}
+                      session={s}
+                      conflicting={conflictIds?.has(s.id) ?? false}
+                      active={selectedId === s.id}
+                      onClick={onSelect ? () => onSelect(s) : undefined}
+                    />
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }
