@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   conflictIdSet,
   DAY_LABEL,
+  EVENT_DAYS,
   formatTime,
   groupByDay,
   speakerLine,
@@ -54,6 +55,8 @@ export default function Planner({
   const [detail, setDetail] = useState<Session | null>(null);
   const [graphOpen, setGraphOpen] = useState(false);
   const [view, setView] = useState<"list" | "timeline">("list");
+  const [listTodayDate, setListTodayDate] = useState<string | null>(null);
+  const [listCollapsedDays, setListCollapsedDays] = useState<Set<string>>(new Set());
 
   const allIds = useMemo(() => sessions.map((s) => s.id), [sessions]);
   const byId = useMemo(() => new Map(sessions.map((s) => [s.id, s])), [sessions]);
@@ -86,6 +89,23 @@ export default function Planner({
     }, 350);
     return () => clearTimeout(t);
   }, [cleanName, ids, cleanX, cleanLinkedIn, router]);
+
+  useEffect(() => {
+    const sgtMs = Date.now() + 8 * 60 * 60 * 1000;
+    const d = new Date(sgtMs);
+    const today = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    setListTodayDate(today);
+    setListCollapsedDays(new Set(EVENT_DAYS.filter((day) => day < today)));
+  }, []);
+
+  function toggleListDay(day: string) {
+    setListCollapsedDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(day)) next.delete(day);
+      else next.add(day);
+      return next;
+    });
+  }
 
   function toggle(id: string) {
     setIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -246,27 +266,42 @@ export default function Planner({
                     Nothing matches those filters.
                   </p>
                 )}
-                {groups.map(({ day, sessions: daySessions }) => (
-                  <section key={day}>
-                    <div className="mb-3 flex items-center gap-3">
-                      <h3 className="label text-sm text-ink-dim">{DAY_LABEL[day]?.short ?? day}</h3>
-                      <span className="font-mono text-xs text-ink-faint">{daySessions.length}</span>
-                      <div className="h-px flex-1 bg-line" />
-                    </div>
-                    <ul className="space-y-1.5">
-                      {daySessions.map((s) => (
-                        <PlannerRow
-                          key={s.id}
-                          session={s}
-                          selected={idSet.has(s.id)}
-                          conflicting={idSet.has(s.id) && conflicts.has(s.id)}
-                          onToggle={() => toggle(s.id)}
-                          onDetail={() => setDetail(s)}
-                        />
-                      ))}
-                    </ul>
-                  </section>
-                ))}
+                {groups.map(({ day, sessions: daySessions }) => {
+                  const isPastDay = listTodayDate !== null && day < listTodayDate;
+                  const isCollapsed = listCollapsedDays.has(day);
+                  return (
+                    <section key={day}>
+                      <div className={`mb-3 flex items-center gap-3 ${isCollapsed ? "opacity-50" : ""}`}>
+                        <h3 className="label text-sm text-ink-dim">{DAY_LABEL[day]?.short ?? day}</h3>
+                        <span className="font-mono text-xs text-ink-faint">{daySessions.length}</span>
+                        <div className="h-px flex-1 bg-line" />
+                        {isPastDay && (
+                          <button
+                            type="button"
+                            onClick={() => toggleListDay(day)}
+                            className="font-mono text-[10px] text-ink-faint transition-colors hover:text-ink-dim"
+                          >
+                            {isCollapsed ? "show ▼" : "hide ▲"}
+                          </button>
+                        )}
+                      </div>
+                      {!isCollapsed && (
+                        <ul className="space-y-1.5">
+                          {daySessions.map((s) => (
+                            <PlannerRow
+                              key={s.id}
+                              session={s}
+                              selected={idSet.has(s.id)}
+                              conflicting={idSet.has(s.id) && conflicts.has(s.id)}
+                              onToggle={() => toggle(s.id)}
+                              onDetail={() => setDetail(s)}
+                            />
+                          ))}
+                        </ul>
+                      )}
+                    </section>
+                  );
+                })}
               </div>
             )}
           </div>
